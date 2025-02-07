@@ -65,8 +65,8 @@ contract PrepareAttestationRequest is Script {
             .prepareAttestationRequest(attestationType, sourceId, requestBody);
 
         // TODO change key in .env
-        string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
-        // string memory baseUrl = "https://fdc-verifiers-testnet.flare.network/";
+        // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
+        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         // string memory baseUrl = "https://bitcoin-testnet4-api.flare.network/";
         string memory url = string.concat(
             baseUrl,

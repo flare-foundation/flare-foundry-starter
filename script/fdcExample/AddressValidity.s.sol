@@ -47,7 +47,7 @@ contract PrepareAttestationRequest is Script {
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
-        string memory baseUrl = "https://fdc-verifiers-testnet.flare.network/";
+        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         string memory url = string.concat(
             baseUrl,
             "verifier/",
@@ -190,7 +190,7 @@ contract RetrieveDataAndProof is Script {
     }
 }
 
-// TODO deploy command
+// forge script script/fdcExample/AddressValidity.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract Deploy is Script {
     function run() external {

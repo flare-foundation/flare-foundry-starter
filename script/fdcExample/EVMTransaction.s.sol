@@ -31,6 +31,7 @@ contract PrepareAttestationRequest is Script {
     string public listEvents = "true";
     string public logIndices = "[]";
     string public sourceName = "testETH"; // Bitcoin chain ID
+    string public baseSourceName = "eth"; // Part of verifier URL
 
     function prepareRequestBody(
         string memory transactionHash,
@@ -78,10 +79,12 @@ contract PrepareAttestationRequest is Script {
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
-        string memory baseUrl = "https://fdc-verifiers-testnet.flare.network/";
+        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         string memory url = string.concat(
             baseUrl,
-            "verifier/eth/EVMTransaction/prepareRequest"
+            "verifier/",
+            baseSourceName,
+            "/EVMTransaction/prepareRequest"
         );
         console.log("url: %s", url);
 
