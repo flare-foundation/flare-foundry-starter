@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {IEVMTransactionVerification} from "dependencies/flare-periphery-0.0.22/src/coston2/IEVMTransactionVerification.sol";
-import {IEVMTransaction} from "dependencies/flare-periphery-0.0.22/src/coston2/IEVMTransaction.sol";
-import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
+import {IEVMTransactionVerification} from "flare-periphery/src/coston2/IEVMTransactionVerification.sol";
+import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
+import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 
 struct EventInfo {
     address sender;

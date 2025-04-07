@@ -2,8 +2,8 @@
 pragma solidity ^0.8.25;
 
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
-import {FtsoV2Interface} from "dependencies/flare-periphery-0.0.22/src/coston2/FtsoV2Interface.sol";
+import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
+import {FtsoV2Interface} from "flare-periphery/src/coston2/FtsoV2Interface.sol";
 
 //
 

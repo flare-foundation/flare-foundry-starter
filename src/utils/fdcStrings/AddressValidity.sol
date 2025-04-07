@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base} from "./Base.sol";
-import {IAddressValidity} from "dependencies/flare-periphery-0.0.22/src/coston2/IAddressValidity.sol";
+import {IAddressValidity} from "flare-periphery/src/coston2/IAddressValidity.sol";
 
 library FdcStrings {
     function toJsonString(

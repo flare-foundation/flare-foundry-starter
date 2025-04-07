@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {RandomNumberV2Interface} from "dependencies/flare-periphery-0.0.22/src/coston2/RandomNumberV2Interface.sol";
+import {RandomNumberV2Interface} from "flare-periphery/src/coston2/RandomNumberV2Interface.sol";
 
 contract MockRandomNumberV2 is RandomNumberV2Interface {
     uint256 private _randomNumber;
