@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Test} from "dependencies/forge-std-1.9.5/src/Test.sol";
 import {GuessingGame} from "src/GuessingGame.sol";
-import {ContractRegistry} from "dependencies/flare-periphery-0.0.1/src/coston2/ContractRegistry.sol";
+import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
 
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {MockRandomNumberV2} from "src/utils/MockRandomNumberV2.sol";
