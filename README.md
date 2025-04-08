@@ -11,7 +11,7 @@ Like this
 
 ```bash
 @openzeppelin-contracts/=dependencies/@openzeppelin-contracts-5.2.0-rc.1/
-flare-periphery/=dependencies/flare-periphery-0.0.1/
+flare-periphery/=dependencies/flare-periphery-0.0.22/
 forge-std/=dependencies/forge-std-1.9.5/src/
 forge-std/=dependencies/forge-std-1.9.5/
 surl/=dependencies/surl-0.0.0/src/

@@ -5,12 +5,12 @@ import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
 import {Script} from "dependencies/forge-std-1.9.5/src/Script.sol";
 import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
-import {IFdcHub} from "flare-periphery/src/coston2/IFdcHub.sol";
-import {IFlareSystemsManager} from "flare-periphery/src/coston2/IFlareSystemsManager.sol";
+import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
+import {IFdcHub} from "dependencies/flare-periphery-0.0.22/src/coston2/IFdcHub.sol";
+import {IFlareSystemsManager} from "dependencies/flare-periphery-0.0.22/src/coston2/IFlareSystemsManager.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {Base} from "./Base.s.sol";
-import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
+import {IEVMTransaction} from "dependencies/flare-periphery-0.0.22/src/coston2/IEVMTransaction.sol";
 import {FdcStrings} from "src/utils/fdcStrings/EVMTransaction.sol";
 import {EVMTransaction as TransferEventListener, TokenTransfer} from "src/fdcExample/EVMTransaction.sol";
 
