@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base} from "./Base.sol";
-import {IConfirmedBlockHeightExists} from "dependencies/flare-periphery-0.0.1/src/coston2/IConfirmedBlockHeightExists.sol";
+import {IConfirmedBlockHeightExists} from "dependencies/flare-periphery-0.0.22/src/coston2/IConfirmedBlockHeightExists.sol";
 
 library FdcStrings {
     function toJsonString(

@@ -11,7 +11,7 @@ fs_permissions = [{ access = "read-write", path = "./" }]
 forge-std = "1.9.5"
 "@openzeppelin-contracts" = "5.2.0-rc.1"
 surl = { version = "0.0.0", git = "https://github.com/memester-xyz/surl.git", rev = "034c912ae9b5e707a5afd21f145b452ad8e800df" }
-flare-periphery = "0.0.21"
+flare-periphery = "0.0.22"
 
 [soldeer]
 # whether soldeer manages remappings
