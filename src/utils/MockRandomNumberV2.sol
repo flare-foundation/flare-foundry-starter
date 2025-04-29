@@ -11,25 +11,15 @@ contract MockRandomNumberV2 is RandomNumberV2Interface {
     function getRandomNumber()
         public
         view
-        returns (
-            uint256 randomNumber,
-            bool isSecureRandom,
-            uint256 randomTimestamp
-        )
+        returns (uint256 randomNumber, bool isSecureRandom, uint256 randomTimestamp)
     {
         return (_randomNumber, _isSecureRandom, _randomTimestamp);
     }
 
-    function getRandomNumberHistorical(
-        uint256 votingRoundId
-    )
+    function getRandomNumberHistorical(uint256 votingRoundId)
         public
         view
-        returns (
-            uint256 randomNumber,
-            bool isSecureRandom,
-            uint256 randomTimestamp
-        )
+        returns (uint256 randomNumber, bool isSecureRandom, uint256 randomTimestamp)
     {
         // Warning suppression
         require(votingRoundId != uint256(0));

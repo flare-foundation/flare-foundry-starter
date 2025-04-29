@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 contract HelloWorld {
     string public greet = "Hello World!";
-    string public world;
+    string private world;
 
     constructor(string memory name) {
         world = name;

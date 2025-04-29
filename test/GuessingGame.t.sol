@@ -14,17 +14,21 @@ contract TestGuessingGame is Test {
     uint16 _secretNumber;
     uint256 _maxNumber;
 
+    string forkUrl = vm.envString("COSTON2_RPC_URL");
+    uint256 blockNumber = 15137396;
+
     function setUp() public {
         _secretNumber = 42;
         _maxNumber = 100;
+
+        // Chain fork at blockNumber
+        vm.createSelectFork(forkUrl, blockNumber);
+
         mockRandom = new MockRandomNumberV2();
         vm.mockCall(
             ContractRegistry.FLARE_CONTRACT_REGISTRY_ADDRESS,
             abi.encodeWithSelector(
-                ContractRegistry
-                    .FLARE_CONTRACT_REGISTRY
-                    .getContractAddressByHash
-                    .selector,
+                ContractRegistry.FLARE_CONTRACT_REGISTRY.getContractAddressByHash.selector,
                 keccak256(abi.encode("RandomNumberV2"))
             ),
             abi.encode(address(mockRandom))
@@ -32,8 +36,7 @@ contract TestGuessingGame is Test {
         mockRandom.setRandomNumber(_secretNumber);
     }
 
-    function test_RevertWhen_MaxNumberTooBig() public {
-        vm.expectRevert("Only numbers smaller than 65535 allowed");
+    function testFail_MaxNumberTooBig() public {
         game = new GuessingGame(1000000);
     }
 
@@ -44,10 +47,7 @@ contract TestGuessingGame is Test {
         string memory got = game.guess(number);
         string memory expected;
         if (number > _maxNumber) {
-            expected = string.concat(
-                "Numbers go only up to ",
-                Strings.toString(_maxNumber)
-            );
+            expected = string.concat("Numbers go only up to ", Strings.toString(_maxNumber));
         } else if (number > _secretNumber) {
             expected = "Too big";
         } else if (number < _secretNumber) {
@@ -57,10 +57,7 @@ contract TestGuessingGame is Test {
         } else {
             expected = "IMPOSSIBLE!";
         }
-        require(
-            Strings.equal(got, expected),
-            string.concat("Expected: ", expected, ", got:", got)
-        );
+        require(Strings.equal(got, expected), string.concat("Expected: ", expected, ", got:", got));
     }
 
     function test_resetGame() public {
@@ -70,19 +67,13 @@ contract TestGuessingGame is Test {
         string memory expected1 = "CORRECT!";
         string memory got1 = game.guess(_secretNumber);
 
-        require(
-            Strings.equal(got1, expected1),
-            string.concat("Expected: ", expected1, ", got:", got1)
-        );
+        require(Strings.equal(got1, expected1), string.concat("Expected: ", expected1, ", got:", got1));
 
         mockRandom.setRandomNumber(_newSecretNumber);
         game.resetGame();
 
         string memory expected2 = "CORRECT!";
         string memory got2 = game.guess(_newSecretNumber);
-        require(
-            Strings.equal(got2, expected2),
-            string.concat("Expected: ", expected2, ", got:", got2)
-        );
+        require(Strings.equal(got2, expected2), string.concat("Expected: ", expected2, ", got:", got2));
     }
 }

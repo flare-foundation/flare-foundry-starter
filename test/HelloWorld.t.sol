@@ -20,11 +20,7 @@ contract HelloWorldTest is Test {
             string.concat("Expected: ", expected1, ", got:", greet1)
         );
 
-        string memory expected2 = string.concat(
-            "Hello, ",
-            helloWorld.world(),
-            "!"
-        );
+        string memory expected2 = string.concat("Hello, ", "Alderaan", "!");
         string memory greet2 = helloWorld.greetWorld();
         require(
             Strings.equal(greet2, expected2),

@@ -5,45 +5,78 @@ import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
 import {Script} from "dependencies/forge-std-1.9.5/src/Script.sol";
 import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
-import {IFdcHub} from "dependencies/flare-periphery-0.0.22/src/coston2/IFdcHub.sol";
-import {IFlareSystemsManager} from "dependencies/flare-periphery-0.0.22/src/coston2/IFlareSystemsManager.sol";
-import {IConfirmedBlockHeightExists} from
-    "dependencies/flare-periphery-0.0.22/src/coston2/IConfirmedBlockHeightExists.sol";
-import {TransferEventListener} from "src/FdcTransferEventListener.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
-import {FdcStrings} from "src/utils/fdcStrings/ConfirmedBlockHeightExists.sol";
 import {Base} from "./Base.s.sol";
+import {IReferencedPaymentNonexistence} from
+    "dependencies/flare-periphery-0.0.22/src/coston2/IReferencedPaymentNonexistence.sol";
 
 // Configuration constants
-string constant attestationTypeName = "ConfirmedBlockHeightExists";
+string constant attestationTypeName = "ReferencedPaymentNonexistence";
 string constant dirPath = "data/";
 
 // Run with command
-//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --ffi
+//      forge script script/fdcExample/ReferencedPaymentNonexistence.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --ffi
 
 contract PrepareAttestationRequest is Script {
     using Surl for *;
 
     // Setting request data
-    string public blockNumber = "3614118";
-    string public queryWindow = "1"; // in seconds
+    string public minimalBlockNumber = "TODO";
+    string public deadlineBlockNumber = "TODO";
+    string public deadlineTimestamp = "TODO";
+    string public destinationAddressHash = "TODO";
+    string public amount = "TODO";
+    string public standardPaymentReference = "TODO";
+    string public checkSourceAddresses = "TODO";
+    string public sourceAddressesRoot = "TODO";
     string public baseSourceName = "btc"; // Part of verifier URL
     string public sourceName = "testBTC"; // Bitcoin chain ID
 
-    function prepareRequestBody(string memory blockNumber, string memory queryWindow)
-        private
-        pure
-        returns (string memory)
-    {
-        return string.concat('{"blockNumber": "', blockNumber, '","queryWindow": "', queryWindow, '"}');
+    function prepareRequestBody(
+        string memory minimalBlockNumber,
+        string memory deadlineBlockNumber,
+        string memory deadlineTimestamp,
+        string memory destinationAddressHash,
+        string memory amount,
+        string memory standardPaymentReference,
+        string memory checkSourceAddresses,
+        string memory sourceAddressesRoot
+    ) private pure returns (string memory) {
+        return string.concat(
+            '{"minimalBlockNumber": "',
+            minimalBlockNumber,
+            '","deadlineBlockNumber": "',
+            deadlineBlockNumber,
+            '","deadlineTimestamp": "',
+            deadlineTimestamp,
+            '","destinationAddressHash": "',
+            destinationAddressHash,
+            '","amount": "',
+            amount,
+            '","standardPaymentReference": "',
+            standardPaymentReference,
+            '","checkSourceAddresses": "',
+            checkSourceAddresses,
+            '","sourceAddressesRoot": "',
+            sourceAddressesRoot,
+            '"}'
+        );
     }
 
     function run() external {
         // Preparing request data
         string memory attestationType = Base.toUtf8HexString(attestationTypeName);
         string memory sourceId = Base.toUtf8HexString(sourceName);
-        string memory requestBody = prepareRequestBody(blockNumber, queryWindow);
+        string memory requestBody = prepareRequestBody(
+            minimalBlockNumber,
+            deadlineBlockNumber,
+            deadlineTimestamp,
+            destinationAddressHash,
+            amount,
+            standardPaymentReference,
+            checkSourceAddresses,
+            sourceAddressesRoot
+        );
 
         (string[] memory headers, string memory body) =
             Base.prepareAttestationRequest(attestationType, sourceId, requestBody);
@@ -71,7 +104,7 @@ contract PrepareAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/ReferencedPaymentNonexistence.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -96,7 +129,7 @@ contract SubmitAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/ReferencedPaymentNonexistence.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -133,10 +166,11 @@ contract RetrieveDataAndProof is Script {
         bytes memory dataJson = Base.parseData(data);
         Base.ParsableProof memory proof = abi.decode(dataJson, (Base.ParsableProof));
 
-        IConfirmedBlockHeightExists.Response memory proofResponse =
-            abi.decode(proof.responseHex, (IConfirmedBlockHeightExists.Response));
+        IReferencedPaymentNonexistence.Response memory proofResponse =
+            abi.decode(proof.responseHex, (IReferencedPaymentNonexistence.Response));
 
-        IConfirmedBlockHeightExists.Proof memory _proof = IConfirmedBlockHeightExists.Proof(proof.proofs, proofResponse);
+        IReferencedPaymentNonexistence.Proof memory _proof =
+            IReferencedPaymentNonexistence.Proof(proof.proofs, proofResponse);
 
         // Writing proof to a file
         Base.writeToFile(
@@ -145,13 +179,13 @@ contract RetrieveDataAndProof is Script {
     }
 }
 
-// forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
+// forge script script/fdcExample/ReferencedPaymentNonexistence.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
 
 contract DeployContract is Script {
     function run() external {}
 }
 
-// forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+// forge script script/fdcExample/ReferencedPaymentNonexistence.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract InteractWithContract is Script {
     function run() external {}

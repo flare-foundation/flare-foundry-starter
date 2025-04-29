@@ -14,7 +14,7 @@ import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {FdcStrings} from "src/utils/fdcStrings/BalanceDecreasingTransaction.sol";
 import {Base} from "./Base.s.sol";
 
-// Global parameters
+// Configuration constants
 string constant attestationTypeName = "BalanceDecreasingTransaction";
 string constant dirPath = "data/";
 
@@ -84,10 +84,10 @@ contract PrepareAttestationRequest is Script {
             data
         );
 
-        // Writing to a file
+        // Writing abiEncodedRequest to a file
         Base.writeToFile(
             dirPath,
-            attestationTypeName,
+            string.concat(attestationTypeName, "_abiEncodedRequest"),
             StringsBase.toHexString(response.abiEncodedRequest),
             true
         );
@@ -103,22 +103,26 @@ contract SubmitAttestationRequest is Script {
 
     function run() external {
         // Reading the abiEncodedRequest from a file
-        string memory fileName = string.concat(attestationTypeName, ".txt");
+        string memory fileName = string.concat(
+            attestationTypeName,
+            "_abiEncodedRequest",
+            ".txt"
+        );
         string memory filePath = string.concat(dirPath, fileName);
         string memory requestStr = vm.readLine(filePath);
         bytes memory request = vm.parseBytes(requestStr);
 
         // Submitting the attestation request
-        Base.submitAttestationRequest(request);
+        uint256 timestamp = Base.submitAttestationRequest(request);
+        uint256 votingRoundId = Base.calculateRoundId(timestamp);
 
         // Writing to a file
-        uint32 votingRoundId = Base.calculateRoundId();
-        string memory printString = string.concat(
-            requestStr,
-            "\n",
-            Strings.toString(votingRoundId)
+        Base.writeToFile(
+            dirPath,
+            string.concat(attestationTypeName, "_votingRoundId"),
+            Strings.toString(votingRoundId),
+            true
         );
-        Base.writeToFile(dirPath, attestationTypeName, printString, true);
     }
 }
 
@@ -131,12 +135,24 @@ contract RetrieveDataAndProof is Script {
     function run() external {
         string memory daLayerUrl = vm.envString("COSTON2_DA_LAYER_URL"); // XXX
         string memory apiKey = vm.envString("X_API_KEY");
-        string memory fileName = string.concat(attestationTypeName, ".txt");
-        string memory filePath = string.concat(dirPath, fileName);
 
-        // We import the roundId and abiEncodedRequest from the first file
-        string memory requestBytes = vm.readLine(filePath);
-        string memory votingRoundId = vm.readLine(filePath);
+        // We import the abiEncodedRequest and votingRoundId from the files
+        string memory requestBytes = vm.readLine(
+            string.concat(
+                dirPath,
+                attestationTypeName,
+                "_abiEncodedRequest",
+                ".txt"
+            )
+        );
+        string memory votingRoundId = vm.readLine(
+            string.concat(
+                dirPath,
+                attestationTypeName,
+                "_votingRoundId",
+                ".txt"
+            )
+        );
 
         console.log("votingRoundId: %s\n", votingRoundId);
         console.log("requestBytes: %s\n", requestBytes);
@@ -180,32 +196,30 @@ contract RetrieveDataAndProof is Script {
                 (IBalanceDecreasingTransaction.Response)
             );
 
-        // Verifying the proof
         IBalanceDecreasingTransaction.Proof
             memory _proof = IBalanceDecreasingTransaction.Proof(
                 proof.proofs,
                 proofResponse
             );
-        verifyProof(_proof);
-    }
 
-    function verifyProof(
-        IBalanceDecreasingTransaction.Proof memory proof
-    ) public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
-
-        bool isValid = ContractRegistry
-            .getFdcVerification()
-            .verifyBalanceDecreasingTransaction(proof);
-        console.log("proof is valid: %s\n", StringsBase.toString(isValid));
-
-        vm.stopBroadcast();
+        // Writing proof to a file
+        Base.writeToFile(
+            dirPath,
+            string.concat(attestationTypeName, "_proof"),
+            StringsBase.toHexString(abi.encode(_proof)),
+            true
+        );
     }
 }
 
-// forge script script/fdcExample/BalanceDecreasingTransaction.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+// forge script script/fdcExample/BalanceDecreasingTransaction.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
-contract Deploy is Script {
+contract DeployContract is Script {
+    function run() external {}
+}
+
+// forge script script/fdcExample/BalanceDecreasingTransaction.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+
+contract InteractWithContract is Script {
     function run() external {}
 }
