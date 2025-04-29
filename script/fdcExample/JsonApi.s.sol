@@ -7,7 +7,7 @@ import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {Base} from "./Base.s.sol";
-import {IJsonApi} from "dependencies/flare-periphery-0.0.22/src/coston2/IJsonApi.sol";
+import {IJsonApi} from "dependencies/flare-periphery-0.0.23/src/coston2/IJsonApi.sol";
 import {StarWarsCharacterList, IStarWarsCharacterList} from "src/fdcExample/JsonApi.sol";
 
 // Configuration constants
@@ -24,44 +24,65 @@ contract PrepareAttestationRequest is Script {
     string public apiUrl = "https://swapi.dev/api/people/3/";
     string public postprocessJq =
         '{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\"/\\") | .[-2] | tonumber)}';
-    string publicAbiSignature = '{\\"components\\": ['
+    string publicAbiSignature =
+        '{\\"components\\": ['
         '{\\"internalType\\": \\"string\\", \\"name\\": \\"name\\", \\"type\\": \\"string\\"},'
         '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"height\\", \\"type\\": \\"uint256\\"},'
         '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"mass\\", \\"type\\": \\"uint256\\"},'
         '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"numberOfFilms\\", \\"type\\": \\"uint256\\"},'
-        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}' "],"
+        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}'
+        "],"
         '\\"name\\": \\"task\\",\\"type\\": \\"tuple\\"}';
 
     string public sourceName = "WEB2";
 
-    function prepareRequestBody(string memory url, string memory postprocessJq, string memory publicAbiSignature)
-        private
-        pure
-        returns (string memory)
-    {
-        return string.concat(
-            '{"url": "', url, '","postprocessJq": "', postprocessJq, '","abi_signature": "', publicAbiSignature, '"}'
-        );
+    function prepareRequestBody(
+        string memory url,
+        string memory postprocessJq,
+        string memory publicAbiSignature
+    ) private pure returns (string memory) {
+        return
+            string.concat(
+                '{"url": "',
+                url,
+                '","postprocessJq": "',
+                postprocessJq,
+                '","abi_signature": "',
+                publicAbiSignature,
+                '"}'
+            );
     }
 
     function run() external {
         // Preparing request data
-        string memory attestationType = Base.toUtf8HexString(attestationTypeName);
+        string memory attestationType = Base.toUtf8HexString(
+            attestationTypeName
+        );
         string memory sourceId = Base.toUtf8HexString(sourceName);
-        string memory requestBody = prepareRequestBody(apiUrl, postprocessJq, publicAbiSignature);
-        (string[] memory headers, string memory body) =
-            Base.prepareAttestationRequest(attestationType, sourceId, requestBody);
+        string memory requestBody = prepareRequestBody(
+            apiUrl,
+            postprocessJq,
+            publicAbiSignature
+        );
+        (string[] memory headers, string memory body) = Base
+            .prepareAttestationRequest(attestationType, sourceId, requestBody);
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
         string memory baseUrl = vm.envString("JQ_VERIFIER_URL_TESTNET");
-        string memory url = string.concat(baseUrl, "JsonApi", "/prepareRequest");
+        string memory url = string.concat(
+            baseUrl,
+            "JsonApi",
+            "/prepareRequest"
+        );
         console.log("url: %s", url);
 
         // Posting the attestation request
         (, bytes memory data) = url.post(headers, body);
 
-        Base.AttestationResponse memory response = Base.parseAttestationRequest(data);
+        Base.AttestationResponse memory response = Base.parseAttestationRequest(
+            data
+        );
 
         // Writing abiEncodedRequest to a file
         Base.writeToFile(
@@ -82,7 +103,11 @@ contract SubmitAttestationRequest is Script {
 
     function run() external {
         // Reading the abiEncodedRequest from a file
-        string memory fileName = string.concat(attestationTypeName, "_abiEncodedRequest", ".txt");
+        string memory fileName = string.concat(
+            attestationTypeName,
+            "_abiEncodedRequest",
+            ".txt"
+        );
         string memory filePath = string.concat(dirPath, fileName);
         string memory requestStr = vm.readLine(filePath);
         bytes memory request = vm.parseBytes(requestStr);
@@ -93,7 +118,10 @@ contract SubmitAttestationRequest is Script {
 
         // Writing to a file
         Base.writeToFile(
-            dirPath, string.concat(attestationTypeName, "_votingRoundId"), Strings.toString(votingRoundId), true
+            dirPath,
+            string.concat(attestationTypeName, "_votingRoundId"),
+            Strings.toString(votingRoundId),
+            true
         );
     }
 }
@@ -109,18 +137,41 @@ contract RetrieveDataAndProof is Script {
         string memory apiKey = vm.envString("X_API_KEY");
 
         // We import the abiEncodedRequest and votingRoundId from the files
-        string memory requestBytes =
-            vm.readLine(string.concat(dirPath, attestationTypeName, "_abiEncodedRequest", ".txt"));
-        string memory votingRoundId = vm.readLine(string.concat(dirPath, attestationTypeName, "_votingRoundId", ".txt"));
+        string memory requestBytes = vm.readLine(
+            string.concat(
+                dirPath,
+                attestationTypeName,
+                "_abiEncodedRequest",
+                ".txt"
+            )
+        );
+        string memory votingRoundId = vm.readLine(
+            string.concat(
+                dirPath,
+                attestationTypeName,
+                "_votingRoundId",
+                ".txt"
+            )
+        );
 
         console.log("votingRoundId: %s\n", votingRoundId);
         console.log("requestBytes: %s\n", requestBytes);
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
+        string memory body = string.concat(
+            '{"votingRoundId":',
+            votingRoundId,
+            ',"requestBytes":"',
+            requestBytes,
+            '"}'
+        );
         console.log("body: %s\n", body);
-        console.log("headers: %s", string.concat("{", headers[0], ", ", headers[1]), "}\n");
+        console.log(
+            "headers: %s",
+            string.concat("{", headers[0], ", ", headers[1]),
+            "}\n"
+        );
 
         // Posting the proof request
         string memory url = string.concat(
@@ -134,15 +185,27 @@ contract RetrieveDataAndProof is Script {
 
         // Decoding the response from JSON data
         bytes memory dataJson = Base.parseData(data);
-        Base.ParsableProof memory proof = abi.decode(dataJson, (Base.ParsableProof));
+        Base.ParsableProof memory proof = abi.decode(
+            dataJson,
+            (Base.ParsableProof)
+        );
 
-        IJsonApi.Response memory proofResponse = abi.decode(proof.responseHex, (IJsonApi.Response));
+        IJsonApi.Response memory proofResponse = abi.decode(
+            proof.responseHex,
+            (IJsonApi.Response)
+        );
 
-        IJsonApi.Proof memory _proof = IJsonApi.Proof(proof.proofs, proofResponse);
+        IJsonApi.Proof memory _proof = IJsonApi.Proof(
+            proof.proofs,
+            proofResponse
+        );
 
         // Writing proof to a file
         Base.writeToFile(
-            dirPath, string.concat(attestationTypeName, "_proof"), StringsBase.toHexString(abi.encode(_proof)), true
+            dirPath,
+            string.concat(attestationTypeName, "_proof"),
+            StringsBase.toHexString(abi.encode(_proof)),
+            true
         );
     }
 }
@@ -172,9 +235,13 @@ contract DeployContract is Script {
 
 contract InteractWithContract is Script {
     function run() external {
-        string memory addressString = vm.readLine(string.concat(dirPath, attestationTypeName, "_address", ".txt"));
+        string memory addressString = vm.readLine(
+            string.concat(dirPath, attestationTypeName, "_address", ".txt")
+        );
         address _address = vm.parseAddress(addressString);
-        string memory proofString = vm.readLine(string.concat(dirPath, attestationTypeName, "_proof", ".txt"));
+        string memory proofString = vm.readLine(
+            string.concat(dirPath, attestationTypeName, "_proof", ".txt")
+        );
         bytes memory proofBytes = vm.parseBytes(proofString);
         IJsonApi.Proof memory proof = abi.decode(proofBytes, (IJsonApi.Proof));
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

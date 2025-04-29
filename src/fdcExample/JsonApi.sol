@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
+import {ContractRegistry} from "dependencies/flare-periphery-0.0.23/src/coston2/ContractRegistry.sol";
 import {IFdcVerification} from "dependencies/flare-periphery-0.0.22/src/coston2/IFdcVerification.sol";
 import {FdcStrings} from "src/utils/fdcStrings/Payment.sol";
 import {IJsonApi} from "dependencies/flare-periphery-0.0.22/src/coston2/IJsonApi.sol";
@@ -25,22 +25,33 @@ struct DataTransportObject {
 
 interface IStarWarsCharacterList {
     function addCharacter(IJsonApi.Proof calldata data) external;
-    function getAllCharacters() external view returns (StarWarsCharacter[] memory);
+    function getAllCharacters()
+        external
+        view
+        returns (StarWarsCharacter[] memory);
 }
 
 contract StarWarsCharacterList {
     mapping(uint256 => StarWarsCharacter) public characters;
     uint256[] public characterIds;
 
-    function isJsonApiProofValid(IJsonApi.Proof calldata _proof) private view returns (bool) {
+    function isJsonApiProofValid(
+        IJsonApi.Proof calldata _proof
+    ) private view returns (bool) {
         // Inline the check for now until we have an official contract deployed
-        return ContractRegistry.auxiliaryGetIJsonApiVerification().verifyJsonApi(_proof);
+        return
+            ContractRegistry.auxiliaryGetIJsonApiVerification().verifyJsonApi(
+                _proof
+            );
     }
 
     function addCharacter(IJsonApi.Proof calldata data) public {
         require(isJsonApiProofValid(data), "Invalid proof");
 
-        DataTransportObject memory dto = abi.decode(data.data.responseBody.abi_encoded_data, (DataTransportObject));
+        DataTransportObject memory dto = abi.decode(
+            data.data.responseBody.abi_encoded_data,
+            (DataTransportObject)
+        );
 
         require(characters[dto.apiUid].apiUid == 0, "Character already exists");
 
@@ -55,8 +66,14 @@ contract StarWarsCharacterList {
         characterIds.push(dto.apiUid);
     }
 
-    function getAllCharacters() public view returns (StarWarsCharacter[] memory) {
-        StarWarsCharacter[] memory result = new StarWarsCharacter[](characterIds.length);
+    function getAllCharacters()
+        public
+        view
+        returns (StarWarsCharacter[] memory)
+    {
+        StarWarsCharacter[] memory result = new StarWarsCharacter[](
+            characterIds.length
+        );
         for (uint256 i = 0; i < characterIds.length; i++) {
             result[i] = characters[characterIds[i]];
         }
