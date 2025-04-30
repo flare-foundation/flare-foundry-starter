@@ -14,14 +14,8 @@ contract TestFdcStrings is Test {
         string memory expected1 = "true";
         string memory got2 = Base.toString(false);
         string memory expected2 = "false";
-        require(
-            Strings.equal(got1, expected1),
-            string.concat("Expected: ", expected1, ", got:", got1)
-        );
-        require(
-            Strings.equal(got2, expected2),
-            string.concat("Expected: ", expected2, ", got:", got2)
-        );
+        require(Strings.equal(got1, expected1), string.concat("Expected: ", expected1, ", got:", got1));
+        require(Strings.equal(got2, expected2), string.concat("Expected: ", expected2, ", got:", got2));
     }
 
     struct TestReq {
@@ -40,13 +34,11 @@ contract TestFdcStrings is Test {
         // BUG this still doesn't work
         uint256[] logIndices;
     }
+
     function test_toString_Request() public view {
         // TODO: Implement this test
         string memory root = vm.projectRoot();
-        string memory path = string.concat(
-            root,
-            "/test/utils/examples/IEVMTransaction/Request.json"
-        );
+        string memory path = string.concat(root, "/test/utils/examples/IEVMTransaction/Request.json");
         string memory got1 = vm.readFile(path);
         bytes memory data = vm.parseJson(got1);
         TestReq memory request = abi.decode(data, (TestReq));

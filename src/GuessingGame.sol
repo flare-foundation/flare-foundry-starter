@@ -11,10 +11,7 @@ contract GuessingGame {
     RandomNumberV2Interface _generator;
 
     constructor(uint256 maxNumber) {
-        require(
-            maxNumber <= type(uint16).max,
-            "Only numbers smaller than 65535 allowed"
-        );
+        require(maxNumber <= type(uint16).max, "Only numbers smaller than 65535 allowed");
         _maxNumber = maxNumber;
         _generator = ContractRegistry.getRandomNumberV2();
         _setNewSecretNumber();
@@ -22,11 +19,7 @@ contract GuessingGame {
 
     function guess(uint16 number) public view returns (string memory) {
         if (number > _maxNumber) {
-            return
-                string.concat(
-                    "Numbers go only up to ",
-                    Strings.toString(_maxNumber)
-                );
+            return string.concat("Numbers go only up to ", Strings.toString(_maxNumber));
         } else if (number > _secretNumber) {
             return "Too big";
         } else if (number < _secretNumber) {
@@ -43,7 +36,7 @@ contract GuessingGame {
     }
 
     function _setNewSecretNumber() private {
-        (uint256 randomNumber, , ) = _generator.getRandomNumber();
+        (uint256 randomNumber,,) = _generator.getRandomNumber();
         randomNumber %= _maxNumber;
         _secretNumber = uint16(randomNumber);
     }

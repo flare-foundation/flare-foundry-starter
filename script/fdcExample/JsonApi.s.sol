@@ -5,54 +5,57 @@ import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
 import {Script} from "dependencies/forge-std-1.9.5/src/Script.sol";
 import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
-import {IFdcHub} from "dependencies/flare-periphery-0.0.22/src/coston2/IFdcHub.sol";
-import {IFlareSystemsManager} from "dependencies/flare-periphery-0.0.22/src/coston2/IFlareSystemsManager.sol";
-import {IConfirmedBlockHeightExists} from
-    "dependencies/flare-periphery-0.0.22/src/coston2/IConfirmedBlockHeightExists.sol";
-import {TransferEventListener} from "src/FdcTransferEventListener.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
-import {FdcStrings} from "src/utils/fdcStrings/ConfirmedBlockHeightExists.sol";
 import {Base} from "./Base.s.sol";
+import {IJsonApi} from "dependencies/flare-periphery-0.0.22/src/coston2/IJsonApi.sol";
+import {StarWarsCharacterList, IStarWarsCharacterList} from "src/fdcExample/JsonApi.sol";
 
 // Configuration constants
-string constant attestationTypeName = "ConfirmedBlockHeightExists";
+string constant attestationTypeName = "IJsonApi";
 string constant dirPath = "data/";
 
 // Run with command
-//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --ffi
+//      forge script script/fdcExample/JsonApi.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --ffi
 
 contract PrepareAttestationRequest is Script {
     using Surl for *;
 
     // Setting request data
-    string public blockNumber = "3614118";
-    string public queryWindow = "1"; // in seconds
-    string public baseSourceName = "btc"; // Part of verifier URL
-    string public sourceName = "testBTC"; // Bitcoin chain ID
+    string public apiUrl = "https://swapi.dev/api/people/3/";
+    string public postprocessJq =
+        '{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\"/\\") | .[-2] | tonumber)}';
+    string publicAbiSignature = '{\\"components\\": ['
+        '{\\"internalType\\": \\"string\\", \\"name\\": \\"name\\", \\"type\\": \\"string\\"},'
+        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"height\\", \\"type\\": \\"uint256\\"},'
+        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"mass\\", \\"type\\": \\"uint256\\"},'
+        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"numberOfFilms\\", \\"type\\": \\"uint256\\"},'
+        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}' "],"
+        '\\"name\\": \\"task\\",\\"type\\": \\"tuple\\"}';
 
-    function prepareRequestBody(string memory blockNumber, string memory queryWindow)
+    string public sourceName = "WEB2";
+
+    function prepareRequestBody(string memory url, string memory postprocessJq, string memory publicAbiSignature)
         private
         pure
         returns (string memory)
     {
-        return string.concat('{"blockNumber": "', blockNumber, '","queryWindow": "', queryWindow, '"}');
+        return string.concat(
+            '{"url": "', url, '","postprocessJq": "', postprocessJq, '","abi_signature": "', publicAbiSignature, '"}'
+        );
     }
 
     function run() external {
         // Preparing request data
         string memory attestationType = Base.toUtf8HexString(attestationTypeName);
         string memory sourceId = Base.toUtf8HexString(sourceName);
-        string memory requestBody = prepareRequestBody(blockNumber, queryWindow);
-
+        string memory requestBody = prepareRequestBody(apiUrl, postprocessJq, publicAbiSignature);
         (string[] memory headers, string memory body) =
             Base.prepareAttestationRequest(attestationType, sourceId, requestBody);
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
-        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
-        string memory url =
-            string.concat(baseUrl, "verifier/", baseSourceName, "/", attestationTypeName, "/prepareRequest");
+        string memory baseUrl = vm.envString("JQ_VERIFIER_URL_TESTNET");
+        string memory url = string.concat(baseUrl, "JsonApi", "/prepareRequest");
         console.log("url: %s", url);
 
         // Posting the attestation request
@@ -71,7 +74,7 @@ contract PrepareAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/JsonApi.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -96,7 +99,7 @@ contract SubmitAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/JsonApi.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -133,10 +136,9 @@ contract RetrieveDataAndProof is Script {
         bytes memory dataJson = Base.parseData(data);
         Base.ParsableProof memory proof = abi.decode(dataJson, (Base.ParsableProof));
 
-        IConfirmedBlockHeightExists.Response memory proofResponse =
-            abi.decode(proof.responseHex, (IConfirmedBlockHeightExists.Response));
+        IJsonApi.Response memory proofResponse = abi.decode(proof.responseHex, (IJsonApi.Response));
 
-        IConfirmedBlockHeightExists.Proof memory _proof = IConfirmedBlockHeightExists.Proof(proof.proofs, proofResponse);
+        IJsonApi.Proof memory _proof = IJsonApi.Proof(proof.proofs, proofResponse);
 
         // Writing proof to a file
         Base.writeToFile(
@@ -145,14 +147,40 @@ contract RetrieveDataAndProof is Script {
     }
 }
 
-// forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
+// forge script script/fdcExample/JsonApi.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
 
 contract DeployContract is Script {
-    function run() external {}
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+
+        StarWarsCharacterList characterList = new StarWarsCharacterList();
+        address _address = address(characterList);
+
+        vm.stopBroadcast();
+
+        Base.writeToFile(
+            dirPath,
+            string.concat(attestationTypeName, "_address"),
+            StringsBase.toHexString(abi.encodePacked(_address)),
+            true
+        );
+    }
 }
 
-// forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+// forge script script/fdcExample/JsonApi.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract InteractWithContract is Script {
-    function run() external {}
+    function run() external {
+        string memory addressString = vm.readLine(string.concat(dirPath, attestationTypeName, "_address", ".txt"));
+        address _address = vm.parseAddress(addressString);
+        string memory proofString = vm.readLine(string.concat(dirPath, attestationTypeName, "_proof", ".txt"));
+        bytes memory proofBytes = vm.parseBytes(proofString);
+        IJsonApi.Proof memory proof = abi.decode(proofBytes, (IJsonApi.Proof));
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+        IStarWarsCharacterList characterList = IStarWarsCharacterList(_address);
+        characterList.addCharacter(proof);
+        vm.stopBroadcast();
+    }
 }

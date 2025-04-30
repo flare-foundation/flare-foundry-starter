@@ -43,7 +43,7 @@ library Base {
         string memory requestBody
     ) internal view returns (string[] memory, string memory) {
         // We read the API key from the .env file
-        string memory apiKey = vm.envString("VERIFIER_API_KEY");
+        string memory apiKey = vm.envString("VERIFIER_API_KEY_TESTNET");
 
         // Preparing headers
         string[] memory headers = prepareHeaders(apiKey);
@@ -90,7 +90,7 @@ library Base {
         string memory apiKey
     ) internal pure returns (string[] memory) {
         string[] memory headers = new string[](2);
-        headers[0] = string.concat('"X-API-KEY": ', apiKey);
+        headers[0] = string.concat('"X-API-KEY": "', apiKey, '"');
         headers[1] = '"Content-Type": "application/json"';
         return headers;
     }
@@ -136,7 +136,9 @@ library Base {
         return response;
     }
 
-    function submitAttestationRequest(bytes memory abiEncodedRequest) internal {
+    function submitAttestationRequest(
+        bytes memory abiEncodedRequest
+    ) internal returns (uint256 timestamp) {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         IFdcRequestFeeConfigurations fdcRequestFeeConfigurations = ContractRegistry
@@ -155,8 +157,10 @@ library Base {
         console.log(address(fdcHub));
         console.log("\n");
 
-        fdcHub.requestAttestation{value: requestFee * 1 wei}(abiEncodedRequest);
+        fdcHub.requestAttestation{value: requestFee}(abiEncodedRequest);
+        uint256 timestamp = vm.getBlockTimestamp();
         vm.stopBroadcast();
+        return timestamp;
     }
 
     function writeToFile(
@@ -213,6 +217,37 @@ library Base {
             );
     }
 
+    function calculateRoundId(
+        uint256 timestamp
+    ) internal returns (uint256 roundId) {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+        // Calculating roundId
+        IFlareSystemsManager flareSystemsManager = ContractRegistry
+            .getFlareSystemsManager();
+
+        uint64 firstVotingRoundStartTs = flareSystemsManager
+            .firstVotingRoundStartTs();
+        uint64 rewardEpochDurationSeconds = flareSystemsManager
+            .votingEpochDurationSeconds();
+
+        console.log("timestamp: %s\n", timestamp);
+        console.log("firstVotingRoundStartTs: %s\n", firstVotingRoundStartTs);
+        console.log(
+            "rewardEpochDurationSeconds: %s\n",
+            rewardEpochDurationSeconds
+        );
+
+        uint256 roundId = (timestamp - uint256(firstVotingRoundStartTs)) /
+            uint256(rewardEpochDurationSeconds);
+
+        console.log("roundId: %s\n", Strings.toString(roundId));
+
+        vm.stopBroadcast();
+
+        return roundId;
+    }
+
     function toJsonString(
         ProofRequest memory request
     ) internal pure returns (string memory) {
@@ -240,25 +275,5 @@ library Base {
                 result = result * 10 + (c - 48);
             }
         }
-    }
-
-    function calculateRoundId() internal returns (uint32) {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
-
-        // Calculating roundId
-        IFlareSystemsManager flareSystemsManager = ContractRegistry
-            .getFlareSystemsManager();
-
-        uint64 firstVodingRoundStartTs = flareSystemsManager
-            .firstVotingRoundStartTs();
-        uint64 rewardEpochDurationSeconds = flareSystemsManager
-            .votingEpochDurationSeconds();
-
-        uint32 roundId = flareSystemsManager.getCurrentVotingEpochId();
-        console.log("roundId: %s\n", Strings.toString(roundId));
-        vm.stopBroadcast();
-
-        return roundId;
     }
 }

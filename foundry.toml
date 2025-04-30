@@ -5,6 +5,7 @@ src = "src"
 out = "out"
 libs = ["dependencies"]
 fs_permissions = [{ access = "read-write", path = "./" }]
+viaIR = true
 
 
 [dependencies]
