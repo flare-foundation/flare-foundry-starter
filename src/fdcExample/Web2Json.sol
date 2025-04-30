@@ -6,13 +6,7 @@ import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {ContractRegistry} from "dependencies/flare-periphery-0.0.23/src/coston2/ContractRegistry.sol";
 import {IFdcVerification} from "dependencies/flare-periphery-0.0.23/src/coston2/IFdcVerification.sol";
 import {FdcStrings} from "src/utils/fdcStrings/Payment.sol";
-import {IJsonApi} from "dependencies/flare-periphery-0.0.23/src/coston2/IJsonApi.sol";
-
-// ============================================================================
-//
-// Deprecated, use Web2Json instead
-//
-// ============================================================================
+import {IWeb2Json} from "dependencies/flare-periphery-0.0.23/src/coston2/IWeb2Json.sol";
 
 struct StarWarsCharacter {
     string name;
@@ -30,7 +24,7 @@ struct DataTransportObject {
 }
 
 interface IStarWarsCharacterList {
-    function addCharacter(IJsonApi.Proof calldata data) external;
+    function addCharacter(IWeb2Json.Proof calldata data) external;
     function getAllCharacters()
         external
         view
@@ -42,20 +36,17 @@ contract StarWarsCharacterList {
     uint256[] public characterIds;
 
     function isJsonApiProofValid(
-        IJsonApi.Proof calldata _proof
+        IWeb2Json.Proof calldata _proof
     ) private view returns (bool) {
         // Inline the check for now until we have an official contract deployed
-        return
-            ContractRegistry.auxiliaryGetIJsonApiVerification().verifyJsonApi(
-                _proof
-            );
+        return ContractRegistry.getFdcVerification().verifyJsonApi(_proof);
     }
 
-    function addCharacter(IJsonApi.Proof calldata data) public {
+    function addCharacter(IWeb2Json.Proof calldata data) public {
         require(isJsonApiProofValid(data), "Invalid proof");
 
         DataTransportObject memory dto = abi.decode(
-            data.data.responseBody.abi_encoded_data,
+            data.data.responseBody.abiEncodedData,
             (DataTransportObject)
         );
 

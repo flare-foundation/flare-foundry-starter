@@ -7,54 +7,59 @@ import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {Base} from "./Base.s.sol";
-import {IJsonApi} from "dependencies/flare-periphery-0.0.23/src/coston2/IJsonApi.sol";
-import {StarWarsCharacterList, IStarWarsCharacterList} from "src/fdcExample/JsonApi.sol";
-
-// ============================================================================
-//
-// Deprecated, use Web2Json instead
-//
-// ============================================================================
+import {IWeb2Json} from "dependencies/flare-periphery-0.0.23/src/coston2/IWeb2Json.sol";
+import {StarWarsCharacterList, IStarWarsCharacterList} from "src/fdcExample/Web2Json.sol";
 
 // Configuration constants
-string constant attestationTypeName = "IJsonApi";
+string constant attestationTypeName = "Web2Json";
 string constant dirPath = "data/";
 
 // Run with command
-//      forge script script/fdcExample/JsonApi.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --ffi
 
 contract PrepareAttestationRequest is Script {
     using Surl for *;
 
     // Setting request data
-    string public apiUrl = "https://swapi.dev/api/people/3/";
-    string public postprocessJq =
-        '{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\"/\\") | .[-2] | tonumber)}';
-    string publicAbiSignature =
-        '{\\"components\\": ['
-        '{\\"internalType\\": \\"string\\", \\"name\\": \\"name\\", \\"type\\": \\"string\\"},'
-        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"height\\", \\"type\\": \\"uint256\\"},'
-        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"mass\\", \\"type\\": \\"uint256\\"},'
-        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"numberOfFilms\\", \\"type\\": \\"uint256\\"},'
-        '{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}'
-        "],"
-        '\\"name\\": \\"task\\",\\"type\\": \\"tuple\\"}';
+    // string public apiUrl = "https://swapi.dev/api/people/3/";
+    string public apiUrl = "https://swapi.info/api/people/3";
+    string public httpMethod = "GET";
+    // Defaults to "Content-Type": "application/json"
+    string public headers = '{\\"Content-Type\\":\\"text/plain\\"}';
+    string public queryParams = "{}";
+    string public body = "{}";
+    string public postProcessJq =
+        '{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\"/\\") | .[-1] | tonumber)}';
+    string public abiSignature =
+        '{\\"components\\": [{\\"internalType\\": \\"string\\", \\"name\\": \\"name\\", \\"type\\": \\"string\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"height\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"mass\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"numberOfFilms\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}],\\"name\\": \\"task\\",\\"type\\": \\"tuple\\"}';
 
-    string public sourceName = "WEB2";
+    string public sourceName = "PublicWeb2";
 
     function prepareRequestBody(
         string memory url,
-        string memory postprocessJq,
-        string memory publicAbiSignature
+        string memory httpMethod,
+        string memory headers,
+        string memory queryParams,
+        string memory body,
+        string memory postProcessJq,
+        string memory abiSignature
     ) private pure returns (string memory) {
         return
             string.concat(
                 '{"url": "',
                 url,
-                '","postprocessJq": "',
-                postprocessJq,
-                '","abi_signature": "',
-                publicAbiSignature,
+                '","httpMethod": "',
+                httpMethod,
+                '","headers": "',
+                headers,
+                '","queryParams": "',
+                queryParams,
+                '","body": "',
+                body,
+                '","postProcessJq": "',
+                postProcessJq,
+                '","abiSignature": "',
+                abiSignature,
                 '"}'
             );
     }
@@ -67,18 +72,22 @@ contract PrepareAttestationRequest is Script {
         string memory sourceId = Base.toUtf8HexString(sourceName);
         string memory requestBody = prepareRequestBody(
             apiUrl,
-            postprocessJq,
-            publicAbiSignature
+            httpMethod,
+            headers,
+            queryParams,
+            body,
+            postProcessJq,
+            abiSignature
         );
         (string[] memory headers, string memory body) = Base
             .prepareAttestationRequest(attestationType, sourceId, requestBody);
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
-        string memory baseUrl = vm.envString("JQ_VERIFIER_URL_TESTNET");
+        string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
         string memory url = string.concat(
             baseUrl,
-            "JsonApi",
+            "Web2Json",
             "/prepareRequest"
         );
         console.log("url: %s", url);
@@ -101,7 +110,7 @@ contract PrepareAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/JsonApi.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -133,7 +142,7 @@ contract SubmitAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/JsonApi.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -196,12 +205,12 @@ contract RetrieveDataAndProof is Script {
             (Base.ParsableProof)
         );
 
-        IJsonApi.Response memory proofResponse = abi.decode(
+        IWeb2Json.Response memory proofResponse = abi.decode(
             proof.responseHex,
-            (IJsonApi.Response)
+            (IWeb2Json.Response)
         );
 
-        IJsonApi.Proof memory _proof = IJsonApi.Proof(
+        IWeb2Json.Proof memory _proof = IWeb2Json.Proof(
             proof.proofs,
             proofResponse
         );
@@ -216,7 +225,7 @@ contract RetrieveDataAndProof is Script {
     }
 }
 
-// forge script script/fdcExample/JsonApi.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
+// forge script script/fdcExample/Web2Json.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
 
 contract DeployContract is Script {
     function run() external {
@@ -237,7 +246,7 @@ contract DeployContract is Script {
     }
 }
 
-// forge script script/fdcExample/JsonApi.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+// forge script script/fdcExample/Web2Json.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract InteractWithContract is Script {
     function run() external {
@@ -249,7 +258,10 @@ contract InteractWithContract is Script {
             string.concat(dirPath, attestationTypeName, "_proof", ".txt")
         );
         bytes memory proofBytes = vm.parseBytes(proofString);
-        IJsonApi.Proof memory proof = abi.decode(proofBytes, (IJsonApi.Proof));
+        IWeb2Json.Proof memory proof = abi.decode(
+            proofBytes,
+            (IWeb2Json.Proof)
+        );
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         IStarWarsCharacterList characterList = IStarWarsCharacterList(_address);
