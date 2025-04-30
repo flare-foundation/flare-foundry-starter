@@ -3,10 +3,10 @@ pragma solidity ^0.8.25;
 
 import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
-import {IFdcVerification} from "dependencies/flare-periphery-0.0.22/src/coston2/IFdcVerification.sol";
+import {ContractRegistry} from "dependencies/flare-periphery-0.0.23/src/coston2/ContractRegistry.sol";
+import {IFdcVerification} from "dependencies/flare-periphery-0.0.23/src/coston2/IFdcVerification.sol";
 import {FdcStrings} from "src/utils/fdcStrings/Payment.sol";
-import {IPayment} from "dependencies/flare-periphery-0.0.22/src/coston2/IPayment.sol";
+import {IPayment} from "dependencies/flare-periphery-0.0.23/src/coston2/IPayment.sol";
 
 struct Payment {
     uint64 blockNumber;
@@ -25,7 +25,9 @@ interface IPaymentRegistry {
 contract PaymentRegistry is IPaymentRegistry {
     Payment[] public verifiedPayments;
 
-    function isPaymentProofValid(IPayment.Proof calldata transaction) public view returns (bool) {
+    function isPaymentProofValid(
+        IPayment.Proof calldata transaction
+    ) public view returns (bool) {
         // Use the library to get the verifier contract and verify that this transaction was proved by state connector
         IFdcVerification fdc = ContractRegistry.getFdcVerification();
         console.log("transaction: %s\n", FdcStrings.toJsonString(transaction));

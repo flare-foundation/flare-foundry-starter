@@ -7,8 +7,7 @@ import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {Base} from "./Base.s.sol";
-import {IReferencedPaymentNonexistence} from
-    "dependencies/flare-periphery-0.0.22/src/coston2/IReferencedPaymentNonexistence.sol";
+import {IReferencedPaymentNonexistence} from "dependencies/flare-periphery-0.0.23/src/coston2/IReferencedPaymentNonexistence.sol";
 
 // Configuration constants
 string constant attestationTypeName = "ReferencedPaymentNonexistence";
@@ -42,30 +41,33 @@ contract PrepareAttestationRequest is Script {
         string memory checkSourceAddresses,
         string memory sourceAddressesRoot
     ) private pure returns (string memory) {
-        return string.concat(
-            '{"minimalBlockNumber": "',
-            minimalBlockNumber,
-            '","deadlineBlockNumber": "',
-            deadlineBlockNumber,
-            '","deadlineTimestamp": "',
-            deadlineTimestamp,
-            '","destinationAddressHash": "',
-            destinationAddressHash,
-            '","amount": "',
-            amount,
-            '","standardPaymentReference": "',
-            standardPaymentReference,
-            '","checkSourceAddresses": "',
-            checkSourceAddresses,
-            '","sourceAddressesRoot": "',
-            sourceAddressesRoot,
-            '"}'
-        );
+        return
+            string.concat(
+                '{"minimalBlockNumber": "',
+                minimalBlockNumber,
+                '","deadlineBlockNumber": "',
+                deadlineBlockNumber,
+                '","deadlineTimestamp": "',
+                deadlineTimestamp,
+                '","destinationAddressHash": "',
+                destinationAddressHash,
+                '","amount": "',
+                amount,
+                '","standardPaymentReference": "',
+                standardPaymentReference,
+                '","checkSourceAddresses": "',
+                checkSourceAddresses,
+                '","sourceAddressesRoot": "',
+                sourceAddressesRoot,
+                '"}'
+            );
     }
 
     function run() external {
         // Preparing request data
-        string memory attestationType = Base.toUtf8HexString(attestationTypeName);
+        string memory attestationType = Base.toUtf8HexString(
+            attestationTypeName
+        );
         string memory sourceId = Base.toUtf8HexString(sourceName);
         string memory requestBody = prepareRequestBody(
             minimalBlockNumber,
@@ -78,20 +80,28 @@ contract PrepareAttestationRequest is Script {
             sourceAddressesRoot
         );
 
-        (string[] memory headers, string memory body) =
-            Base.prepareAttestationRequest(attestationType, sourceId, requestBody);
+        (string[] memory headers, string memory body) = Base
+            .prepareAttestationRequest(attestationType, sourceId, requestBody);
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
         string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
-        string memory url =
-            string.concat(baseUrl, "verifier/", baseSourceName, "/", attestationTypeName, "/prepareRequest");
+        string memory url = string.concat(
+            baseUrl,
+            "verifier/",
+            baseSourceName,
+            "/",
+            attestationTypeName,
+            "/prepareRequest"
+        );
         console.log("url: %s", url);
 
         // Posting the attestation request
         (, bytes memory data) = url.post(headers, body);
 
-        Base.AttestationResponse memory response = Base.parseAttestationRequest(data);
+        Base.AttestationResponse memory response = Base.parseAttestationRequest(
+            data
+        );
 
         // Writing abiEncodedRequest to a file
         Base.writeToFile(
@@ -112,7 +122,11 @@ contract SubmitAttestationRequest is Script {
 
     function run() external {
         // Reading the abiEncodedRequest from a file
-        string memory fileName = string.concat(attestationTypeName, "_abiEncodedRequest", ".txt");
+        string memory fileName = string.concat(
+            attestationTypeName,
+            "_abiEncodedRequest",
+            ".txt"
+        );
         string memory filePath = string.concat(dirPath, fileName);
         string memory requestStr = vm.readLine(filePath);
         bytes memory request = vm.parseBytes(requestStr);
@@ -123,7 +137,10 @@ contract SubmitAttestationRequest is Script {
 
         // Writing to a file
         Base.writeToFile(
-            dirPath, string.concat(attestationTypeName, "_votingRoundId"), Strings.toString(votingRoundId), true
+            dirPath,
+            string.concat(attestationTypeName, "_votingRoundId"),
+            Strings.toString(votingRoundId),
+            true
         );
     }
 }
@@ -139,18 +156,41 @@ contract RetrieveDataAndProof is Script {
         string memory apiKey = vm.envString("X_API_KEY");
 
         // We import the abiEncodedRequest and votingRoundId from the files
-        string memory requestBytes =
-            vm.readLine(string.concat(dirPath, attestationTypeName, "_abiEncodedRequest", ".txt"));
-        string memory votingRoundId = vm.readLine(string.concat(dirPath, attestationTypeName, "_votingRoundId", ".txt"));
+        string memory requestBytes = vm.readLine(
+            string.concat(
+                dirPath,
+                attestationTypeName,
+                "_abiEncodedRequest",
+                ".txt"
+            )
+        );
+        string memory votingRoundId = vm.readLine(
+            string.concat(
+                dirPath,
+                attestationTypeName,
+                "_votingRoundId",
+                ".txt"
+            )
+        );
 
         console.log("votingRoundId: %s\n", votingRoundId);
         console.log("requestBytes: %s\n", requestBytes);
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
+        string memory body = string.concat(
+            '{"votingRoundId":',
+            votingRoundId,
+            ',"requestBytes":"',
+            requestBytes,
+            '"}'
+        );
         console.log("body: %s\n", body);
-        console.log("headers: %s", string.concat("{", headers[0], ", ", headers[1]), "}\n");
+        console.log(
+            "headers: %s",
+            string.concat("{", headers[0], ", ", headers[1]),
+            "}\n"
+        );
 
         // Posting the proof request
         string memory url = string.concat(
@@ -164,17 +204,29 @@ contract RetrieveDataAndProof is Script {
 
         // Decoding the response from JSON data
         bytes memory dataJson = Base.parseData(data);
-        Base.ParsableProof memory proof = abi.decode(dataJson, (Base.ParsableProof));
+        Base.ParsableProof memory proof = abi.decode(
+            dataJson,
+            (Base.ParsableProof)
+        );
 
-        IReferencedPaymentNonexistence.Response memory proofResponse =
-            abi.decode(proof.responseHex, (IReferencedPaymentNonexistence.Response));
+        IReferencedPaymentNonexistence.Response memory proofResponse = abi
+            .decode(
+                proof.responseHex,
+                (IReferencedPaymentNonexistence.Response)
+            );
 
-        IReferencedPaymentNonexistence.Proof memory _proof =
-            IReferencedPaymentNonexistence.Proof(proof.proofs, proofResponse);
+        IReferencedPaymentNonexistence.Proof
+            memory _proof = IReferencedPaymentNonexistence.Proof(
+                proof.proofs,
+                proofResponse
+            );
 
         // Writing proof to a file
         Base.writeToFile(
-            dirPath, string.concat(attestationTypeName, "_proof"), StringsBase.toHexString(abi.encode(_proof)), true
+            dirPath,
+            string.concat(attestationTypeName, "_proof"),
+            StringsBase.toHexString(abi.encode(_proof)),
+            true
         );
     }
 }

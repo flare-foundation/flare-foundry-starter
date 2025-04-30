@@ -7,28 +7,61 @@ import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {Base} from "./Base.s.sol";
-import {IAddressValidity} from "dependencies/flare-periphery-0.0.23/src/coston2/IAddressValidity.sol";
-import {AddressRegistry, IAddressRegistry} from "src/fdcExample/AddressValidity.sol";
+import {IWeb2Json} from "dependencies/flare-periphery-0.0.23/src/coston2/IWeb2Json.sol";
+import {StarWarsCharacterList, IStarWarsCharacterList} from "src/fdcExample/Web2Json.sol";
 
 // Configuration constants
-string constant attestationTypeName = "AddressValidity";
+string constant attestationTypeName = "Web2Json";
 string constant dirPath = "data/";
 
 // Run with command
-//      forge script script/fdcExample/AddressValidity.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --ffi
 
 contract PrepareAttestationRequest is Script {
     using Surl for *;
 
     // Setting request data
-    string public addressStr = "mg9P9f4wr9w7c1sgFeiTC5oMLYXCc2c7hs"; // Id of the Bitcoin address to be validated
-    string public baseSourceName = "btc"; // Part of verifier URL
-    string public sourceName = "testBTC"; // Bitcoin chain ID
+    // string public apiUrl = "https://swapi.dev/api/people/3/";
+    string public apiUrl = "https://swapi.info/api/people/3";
+    string public httpMethod = "GET";
+    // Defaults to "Content-Type": "application/json"
+    string public headers = '{\\"Content-Type\\":\\"text/plain\\"}';
+    string public queryParams = "{}";
+    string public body = "{}";
+    string public postProcessJq =
+        '{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\"/\\") | .[-1] | tonumber)}';
+    string public abiSignature =
+        '{\\"components\\": [{\\"internalType\\": \\"string\\", \\"name\\": \\"name\\", \\"type\\": \\"string\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"height\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"mass\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"numberOfFilms\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}],\\"name\\": \\"task\\",\\"type\\": \\"tuple\\"}';
+
+    string public sourceName = "PublicWeb2";
 
     function prepareRequestBody(
-        string memory addressStr
+        string memory url,
+        string memory httpMethod,
+        string memory headers,
+        string memory queryParams,
+        string memory body,
+        string memory postProcessJq,
+        string memory abiSignature
     ) private pure returns (string memory) {
-        return string.concat('{"addressStr": "', addressStr, '"}');
+        return
+            string.concat(
+                '{"url": "',
+                url,
+                '","httpMethod": "',
+                httpMethod,
+                '","headers": "',
+                headers,
+                '","queryParams": "',
+                queryParams,
+                '","body": "',
+                body,
+                '","postProcessJq": "',
+                postProcessJq,
+                '","abiSignature": "',
+                abiSignature,
+                '"}'
+            );
     }
 
     function run() external {
@@ -37,19 +70,24 @@ contract PrepareAttestationRequest is Script {
             attestationTypeName
         );
         string memory sourceId = Base.toUtf8HexString(sourceName);
-        string memory requestBody = prepareRequestBody(addressStr);
+        string memory requestBody = prepareRequestBody(
+            apiUrl,
+            httpMethod,
+            headers,
+            queryParams,
+            body,
+            postProcessJq,
+            abiSignature
+        );
         (string[] memory headers, string memory body) = Base
             .prepareAttestationRequest(attestationType, sourceId, requestBody);
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
-        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
+        string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
         string memory url = string.concat(
             baseUrl,
-            "verifier/",
-            baseSourceName,
-            "/",
-            attestationTypeName,
+            "Web2Json",
             "/prepareRequest"
         );
         console.log("url: %s", url);
@@ -72,7 +110,7 @@ contract PrepareAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/AddressValidity.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -104,7 +142,7 @@ contract SubmitAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/AddressValidity.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -167,12 +205,12 @@ contract RetrieveDataAndProof is Script {
             (Base.ParsableProof)
         );
 
-        IAddressValidity.Response memory proofResponse = abi.decode(
+        IWeb2Json.Response memory proofResponse = abi.decode(
             proof.responseHex,
-            (IAddressValidity.Response)
+            (IWeb2Json.Response)
         );
 
-        IAddressValidity.Proof memory _proof = IAddressValidity.Proof(
+        IWeb2Json.Proof memory _proof = IWeb2Json.Proof(
             proof.proofs,
             proofResponse
         );
@@ -187,15 +225,15 @@ contract RetrieveDataAndProof is Script {
     }
 }
 
-// forge script script/fdcExample/AddressValidity.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
+// forge script script/fdcExample/Web2Json.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
 
 contract DeployContract is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        AddressRegistry addressRegistry = new AddressRegistry();
-        address _address = address(addressRegistry);
+        StarWarsCharacterList characterList = new StarWarsCharacterList();
+        address _address = address(characterList);
 
         vm.stopBroadcast();
 
@@ -208,7 +246,7 @@ contract DeployContract is Script {
     }
 }
 
-// forge script script/fdcExample/AddressValidity.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+// forge script script/fdcExample/Web2Json.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
 
 contract InteractWithContract is Script {
     function run() external {
@@ -220,14 +258,14 @@ contract InteractWithContract is Script {
             string.concat(dirPath, attestationTypeName, "_proof", ".txt")
         );
         bytes memory proofBytes = vm.parseBytes(proofString);
-        IAddressValidity.Proof memory proof = abi.decode(
+        IWeb2Json.Proof memory proof = abi.decode(
             proofBytes,
-            (IAddressValidity.Proof)
+            (IWeb2Json.Proof)
         );
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-        IAddressRegistry registry = IAddressRegistry(_address);
-        registry.registerAddress("mg9P9f4wr9w7c1sgFeiTC5oMLYXCc2c7hs", proof);
+        IStarWarsCharacterList characterList = IStarWarsCharacterList(_address);
+        characterList.addCharacter(proof);
         vm.stopBroadcast();
     }
 }
