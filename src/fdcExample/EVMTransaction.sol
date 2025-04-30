@@ -3,9 +3,9 @@ pragma solidity ^0.8.25;
 
 import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "dependencies/flare-periphery-0.0.23/src/coston2/ContractRegistry.sol";
-import {IEVMTransaction} from "dependencies/flare-periphery-0.0.23/src/coston2/IEVMTransaction.sol";
-import {IFdcVerification} from "dependencies/flare-periphery-0.0.23/src/coston2/IFdcVerification.sol";
+import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
+import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
+import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 import {FdcStrings} from "src/utils/fdcStrings/EVMTransaction.sol";
 
 struct TokenTransfer {

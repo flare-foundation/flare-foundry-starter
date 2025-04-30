@@ -7,7 +7,7 @@ import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {Base} from "./Base.s.sol";
-import {IAddressValidity} from "dependencies/flare-periphery-0.0.23/src/coston2/IAddressValidity.sol";
+import {IAddressValidity} from "flare-periphery/src/coston2/IAddressValidity.sol";
 import {AddressRegistry, IAddressRegistry} from "src/fdcExample/AddressValidity.sol";
 
 // Configuration constants

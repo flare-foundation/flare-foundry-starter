@@ -7,7 +7,7 @@ import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {Base} from "./Base.s.sol";
-import {IPayment} from "dependencies/flare-periphery-0.0.23/src/coston2/IPayment.sol";
+import {IPayment} from "flare-periphery/src/coston2/IPayment.sol";
 import {PaymentRegistry, IPaymentRegistry} from "src/fdcExample/Payment.sol";
 
 // Configuration constants
