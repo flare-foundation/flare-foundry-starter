@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 // Import the AssetManager interface
-import {IAssetManager} from "dependencies/flare-periphery-0.0.23/src/coston/IAssetManager.sol";
+import {IAssetManager} from "flare-periphery/src/coston/IAssetManager.sol";
 
 // Contract for accessing FAssets settings from the asset manager
 contract FAssetsSettings {

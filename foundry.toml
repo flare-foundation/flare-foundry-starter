@@ -12,7 +12,7 @@ viaIR = true
 forge-std = "1.9.5"
 "@openzeppelin-contracts" = "5.2.0-rc.1"
 surl = { version = "0.0.0", git = "https://github.com/memester-xyz/surl.git", rev = "034c912ae9b5e707a5afd21f145b452ad8e800df" }
-flare-periphery = "0.0.23"
+flare-periphery = "0.0.26"
 
 [soldeer]
 # whether soldeer manages remappings
@@ -30,6 +30,12 @@ remappings_location = "txt"
 
 # Install all subdependencies
 recursive_deps = true
+
+[rpc_endpoints]
+coston = "${COSTON_RPC_URL}"
+coston2 = "${COSTON2_RPC_URL}"
+songbird = "${SONGBIRD_RPC_URL}"
+flare = "${FLARE_RPC_URL}"
 
 [etherscan]
 coston = { key = "X", chain = 16, url = "${COSTON_RPC_URL}" }

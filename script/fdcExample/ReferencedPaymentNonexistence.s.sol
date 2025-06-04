@@ -7,7 +7,7 @@ import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {Base} from "./Base.s.sol";
-import {IReferencedPaymentNonexistence} from "dependencies/flare-periphery-0.0.23/src/coston2/IReferencedPaymentNonexistence.sol";
+import {IReferencedPaymentNonexistence} from "flare-periphery/src/coston2/IReferencedPaymentNonexistence.sol";
 
 // Configuration constants
 string constant attestationTypeName = "ReferencedPaymentNonexistence";
