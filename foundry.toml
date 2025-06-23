@@ -16,7 +16,8 @@ flare-periphery = "0.0.26"
 
 [soldeer]
 # whether soldeer manages remappings
-remappings_generate = true
+# set to false because it messes up the ordering
+remappings_generate = false
 
 # whether soldeer re-generates all remappings when installing, updating or uninstalling deps
 remappings_regenerate = false
