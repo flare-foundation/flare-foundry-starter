@@ -5,9 +5,12 @@ import {Script} from "dependencies/forge-std-1.9.5/src/Script.sol";
 import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
 import { FAssetsSettings } from "../../src/fassets/FAssetsSettings.sol";
 
-contract DeployAngGetFAssetsSettings is Script {
-    // Address of the AssetManager contract on Songbird Testnet Coston
-    address constant ASSET_MANAGER = address(0x56728e46908fB6FcC5BCD2cc0c0F9BB91C3e4D34);
+// Run with command
+// forge script script/fassets/FAssetsSettings.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL
+
+contract Deploy is Script {
+    // Address of the AssetManager contract on Flare Testnet Coston2
+    address constant ASSET_MANAGER = address(0xDeD50DA9C3492Bee44560a4B35cFe0e778F41eC5);
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
