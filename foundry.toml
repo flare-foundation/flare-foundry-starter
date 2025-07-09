@@ -12,7 +12,7 @@ viaIR = true
 forge-std = "1.9.5"
 "@openzeppelin-contracts" = "5.2.0-rc.1"
 surl = { version = "0.0.0", git = "https://github.com/memester-xyz/surl.git", rev = "034c912ae9b5e707a5afd21f145b452ad8e800df" }
-flare-periphery = "0.1.28"
+flare-periphery = "0.1.33"
 
 [soldeer]
 # whether soldeer manages remappings
@@ -40,6 +40,6 @@ flare = "${FLARE_RPC_URL}"
 
 [etherscan]
 coston = { key = "X", chain = 16, url = "${COSTON_RPC_URL}" }
-coston2 = { key = "X", chain = 16, url = "${COSTON2_RPC_URL}" }
-songbird = { key = "X", chain = 16, url = "${SONGBIRD_RPC_URL}" }
-flare = { key = "X", chain = 16, url = "${FLARE_RPC_URL}" }
+coston2 = { key = "X", chain = 114, url = "${COSTON2_RPC_URL}" }
+songbird = { key = "X", chain = 19, url = "${SONGBIRD_RPC_URL}" }
+flare = { key = "X", chain = 14, url = "${FLARE_RPC_URL}" }
