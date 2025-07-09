@@ -19,7 +19,7 @@ contract Deploy is Script {
         console.log("AssetManagerRegistry deployed at:", address(assetManagerRegistry));
 
         // Get asset manager address
-        (address assetManagerAddress) = assetManagerRegistry.getFxrpAssetManager();
+        address assetManagerAddress = assetManagerRegistry.getFxrpAssetManager();
         console.log("Asset manager address", assetManagerAddress);
 
         vm.stopBroadcast();
