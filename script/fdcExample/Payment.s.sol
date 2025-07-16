@@ -92,7 +92,7 @@ contract PrepareAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/Payment.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Payment.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -124,7 +124,7 @@ contract SubmitAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/Payment.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Payment.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -207,7 +207,7 @@ contract RetrieveDataAndProof is Script {
     }
 }
 
-// forge script script/fdcExample/Payment.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --verify --ffi
+// forge script script/fdcExample/Payment.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --ffi
 
 contract DeployContract is Script {
     function run() external {
@@ -228,7 +228,7 @@ contract DeployContract is Script {
     }
 }
 
-// forge script script/fdcExample/Payment.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_API_KEY --broadcast --ffi
+// forge script script/fdcExample/Payment.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
 
 contract InteractWithContract is Script {
     function run() external {
