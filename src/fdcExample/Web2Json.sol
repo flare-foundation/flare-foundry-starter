@@ -76,4 +76,6 @@ contract StarWarsCharacterList {
         }
         return result;
     }
+
+    function abiSignatureHack(DataTransportObject memory dto) public pure {}
 }
