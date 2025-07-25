@@ -19,7 +19,6 @@ string constant ATTESTATION_TYPE_NAME = "Web2Json";
 // 1. Prepares and submits the FDC request.
 //    *** RUN THIS SCRIPT ON A FLARE NETWORK (e.g., Coston2) ***
 contract PrepareAndSubmitRequest is Script {
-    /* ... This contract is correct, no changes needed ... */
     using Surl for *;
 
     string public constant SOURCE_NAME = "PublicWeb2";

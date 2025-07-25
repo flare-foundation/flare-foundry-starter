@@ -32,7 +32,6 @@ contract DeployInfrastructure is Script {
         names[0] = "Relay";
         addresses[0] = CrossChainFdcConfig.RELAY_ADDRESS;
 
-        // Add the AddressUpdater itself so it can be found by AddressUpdatable contracts
         names[1] = "AddressUpdater";
         addresses[1] = address(addressUpdater);
 
