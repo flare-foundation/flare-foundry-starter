@@ -1,0 +1,7 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+library WeatherIdConfig {
+    // TODO: UPDATE THIS ADDRESS AFTER DEPLOYING
+    address constant WEATHER_ID_AGENCY_ADDRESS = 0x0000000000000000000000000000000000000000;
+}
