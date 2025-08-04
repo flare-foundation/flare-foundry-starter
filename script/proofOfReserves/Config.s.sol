@@ -16,6 +16,6 @@ library ProofOfReservesConfig {
     address constant READER_COSTON2 = 0x28344Fbee34Ff19949F2fAe79D79382440d5Ec1F;
 
     // TODO: STEP 2 - Update after running the ActivateReaders script on Coston & Coston2
-    string constant TX_HASH_COSTON = "0xdf0c920109d54d3406692ed5449f363eee14c5951e54178423551c3ae16b86ca";
+    string constant TX_HASH_COSTON = "0xb838c176a9d2fe988d4b588d66a635ef40460e831af555c1907955115feb98d4";
     string constant TX_HASH_COSTON2 = "0xa24323100bc3bc8318cd79ed0db779f024487229942956c08d82c90a9f9b1804";
 }

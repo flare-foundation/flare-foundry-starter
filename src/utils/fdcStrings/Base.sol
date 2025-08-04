@@ -4,6 +4,29 @@ pragma solidity ^0.8.24;
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 
 library Base {
+    function fromInt(int256 _num, uint8 _decimals) internal pure returns (string memory) {
+        bool isNegative = _num < 0;
+        uint256 absNum = uint256(isNegative ? -_num : _num);
+        uint256 integerPart = absNum / (10**_decimals);
+        uint256 fractionalPart = absNum % (10**_decimals);
+
+        string memory result = Strings.toString(integerPart);
+        if (fractionalPart > 0) {
+            // Pad with leading zeros if necessary
+            string memory fractionalStr = Strings.toString(fractionalPart);
+            uint256 requiredPadding = _decimals - bytes(fractionalStr).length;
+            for (uint i = 0; i < requiredPadding; i++) {
+                fractionalStr = string.concat("0", fractionalStr);
+            }
+            result = string.concat(result, ".", fractionalStr);
+        }
+        
+        if (isNegative) {
+            result = string.concat("-", result);
+        }
+        return result;
+    }
+    
     function toString(bool _bool) internal pure returns (string memory) {
         return _bool ? "true" : "false";
     }

@@ -89,12 +89,14 @@ contract PrepareRequests is Script {
         console.log("Web2Json request prepared and saved.");
 
         // Prepare and write Coston EVM transaction request
-        bytes memory evmCostonRequest = prepareEvmTxRequest("testFLR", "coston", "0xa24323100bc3bc8318cd79ed0db779f024487229942956c08d82c90a9f9b1804");
+        // Using "testSGB" as sourceId and "sgb" as urlTypeBase as per the reference script
+        bytes memory evmCostonRequest = prepareEvmTxRequest("testSGB", "sgb", ProofOfReservesConfig.TX_HASH_COSTON);
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston_request.txt", StringsBase.toHexString(evmCostonRequest), true);
         console.log("Coston EVM Tx request prepared and saved.");
 
         // Prepare and write Coston2 EVM transaction request
-        bytes memory evmCoston2Request = prepareEvmTxRequest("testC2FLR", "coston2", "0x6a56fc432075b050299b5ab29c74b9c17ced0631976d2abd960eaa6b70995e4c");
+        // Using "testFLR" as sourceId and "flr" as urlTypeBase as per the reference script
+        bytes memory evmCoston2Request = prepareEvmTxRequest("testFLR", "flr", ProofOfReservesConfig.TX_HASH_COSTON2);
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_request.txt", StringsBase.toHexString(evmCoston2Request), true);
         console.log("Coston2 EVM Tx request prepared and saved.");
     }
@@ -102,28 +104,39 @@ contract PrepareRequests is Script {
     function prepareWeb2JsonRequest() internal returns (bytes memory) {
         string memory apiUrl = "https://api.htdigitalassets.com/alm-stablecoin-db/metrics/current_reserves_amount";
         string memory httpMethod = "GET";
-        string memory headers = '{\"Content-Type\":\"application/json\"}';
-        string memory queryParams = "{}";
-        string memory bodyField = "{}";
-        string memory postProcessJq = '{\"reserves\": (.value | gsub(\",\"; \"\") | sub(\"\\.\\d*\"; \"\") | tonumber)}';
-        string memory abiSignature = '{\"components\":[{\"internalType\":\"uint256\",\"name\":\"reserves\",\"type\":\"uint256\"}],\"internalType\":\"struct DataTransportObject\",\"name\":\"dto\",\"type\":\"tuple\"}';
+        string memory headersValue = '{\\"Content-Type\\":\\"application/json\\"}';
+        string memory queryParamsValue = "{}";
+        string memory bodyFieldValue = "{}";
+        string memory postProcessJqValue = '{\\"reserves\\": (.value | gsub(\\",\\";\\"\\") | split(\\".\\")[0] | tonumber)}';
+        string memory abiSignatureValue = '{\\"components\\":[{\\"internalType\\":\\"uint256\\",\\"name\\":\\"reserves\\",\\"type\\":\\"uint256\\"}],\\"internalType\\":\\"struct DataTransportObject\\",\\"name\\":\\"dto\\",\\"type\\":\\"tuple\\"}';
+
         string memory requestBody = string.concat(
-            '{\"url\":\"', apiUrl, '\",',
-            '\"httpMethod\":\"', httpMethod, '\",',
-            '\"headers\":\"', headers, '\",',
-            '\"queryParams\":\"', queryParams, '\",',
-            '\"body\":\"', bodyField, '\",',
-            '\"postProcessJq\":\"', postProcessJq, '\",',
-            '\"abiSignature\":\"', abiSignature, '\"}'
+            '{"url":"', apiUrl, '",',
+            '"httpMethod":"', httpMethod, '",',
+            '"headers":"', headersValue, '",',
+            '"queryParams":"', queryParamsValue, '",',
+            '"body":"', bodyFieldValue, '",',
+            '"postProcessJq":"', postProcessJqValue, '",',
+            '"abiSignature":"', abiSignatureValue, '"}'
         );
+        
         string memory url = string.concat(vm.envString("WEB2JSON_VERIFIER_URL_TESTNET"), "Web2Json/prepareRequest");
+        
+        // --- Debugging Log ---
+        console.log("Constructed Web2Json Verifier URL:", url);
+
         return FdcBase.prepareFdcRequest(url, "Web2Json", "PublicWeb2", requestBody);
     }
 
-    function prepareEvmTxRequest(string memory sourceId, string memory chain, string memory txHash) internal returns (bytes memory) {
-        string memory body = string.concat('{"transactionHash":"', txHash, '","requiredConfirmations":"1","provideInput":true,"listEvents":true,"logIndices":[]}');
-        string memory url = string.concat(vm.envString("VERIFIER_URL_TESTNET"), "verifier/", chain, "/EVMTransaction/prepareRequest");
-        return FdcBase.prepareFdcRequest(url, "EVMTransaction", sourceId, body);
+    function prepareEvmTxRequest(string memory sourceId, string memory urlTypeBase, string memory txHash) internal returns (bytes memory) {
+        string memory requestBody = string.concat('{"transactionHash":"', txHash, '","requiredConfirmations":"1","provideInput":true,"listEvents":true,"logIndices":[]}');
+        
+        string memory url = string.concat(vm.envString("VERIFIER_URL_TESTNET"), "verifier/", urlTypeBase, "/EVMTransaction/prepareRequest");
+
+        // --- Debugging Log ---
+        console.log("Constructed EVMTransaction Verifier URL:", url);
+
+        return FdcBase.prepareFdcRequest(url, "EVMTransaction", sourceId, requestBody);
     }
 }
 // TODO: fix parsing of web2json request....
@@ -140,10 +153,12 @@ contract SubmitRequests is Script {
         string memory requestFile = string.concat(attestationType, "_request.txt");
         bytes memory request = vm.parseBytes(vm.readLine(string.concat(FDC_DATA_DIR_POR, requestFile)));
 
-        uint256 roundId = FdcBase.submitAttestationRequest(request);
+        uint256 timestamp = FdcBase.submitAttestationRequest(request);
+        uint256 roundId = FdcBase.calculateRoundId(timestamp);
 
         string memory roundIdFile = string.concat(attestationType, "_roundId.txt");
-        FdcBase.writeToFile(FDC_DATA_DIR_POR, roundIdFile, Strings.toHexString(roundId), true);
+        // CORRECTED: Save roundId as a plain number string for easier reading.
+        FdcBase.writeToFile(FDC_DATA_DIR_POR, roundIdFile, Strings.toString(roundId), true);
 
         console.log(string.concat(attestationType, " Request submitted in round: "), roundId);
     }
@@ -152,38 +167,54 @@ contract SubmitRequests is Script {
 // Step 3: Retrieve proofs and save them to files.
 // forge script script/proofOfReserves/ProofOfReserves.s.sol:RetrieveProofs --rpc-url coston2 --ffi -vvvv
 contract RetrieveProofs is Script {
+    // The FDC Protocol ID is a constant on Flare networks.
+    uint8 constant FDC_PROTOCOL_ID = 200;
+
     function run() external {
-        // Retrieve Web2Json Proof
-        bytes memory web2JsonRequest = vm.parseBytes(vm.readLine(string.concat(FDC_DATA_DIR_POR, "Web2Json_request.txt")));
-        uint256 roundIdWeb2 = vm.parseUint(vm.readLine(string.concat(FDC_DATA_DIR_POR, "Web2Json_roundId.txt")));
+        console.log("--- Starting RetrieveProofs script ---");
+
+        // --- Retrieve Web2Json Proof ---
+        console.log("Reading Web2Json proof files...");
+        // CORRECTED: Use vm.readFile for the long hex string.
+        bytes memory web2JsonRequest = vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "Web2Json_request.txt")));
+        uint256 roundIdWeb2 = FdcBase.stringToUint(vm.readLine(string.concat(FDC_DATA_DIR_POR, "Web2Json_roundId.txt")));
+        console.log("Files read successfully. Retrieving proof for Web2Json...");
         IWeb2Json.Proof memory web2Proof = retrieveWeb2JsonProof(web2JsonRequest, roundIdWeb2);
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "Web2Json_proof.txt", StringsBase.toHexString(abi.encode(web2Proof)), true);
         console.log("Web2Json proof retrieved and saved.");
 
-        // Retrieve Coston EVM Proof
-        bytes memory evmCostonRequest = vm.parseBytes(vm.readLine(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston_request.txt")));
-        uint256 roundIdCoston = vm.parseUint(vm.readLine(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston_roundId.txt")));
+        // --- Retrieve Coston EVM Proof ---
+        console.log("\nReading Coston EVM proof files...");
+        // CORRECTED: Use vm.readFile for the long hex string.
+        bytes memory evmCostonRequest = vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston_request.txt")));
+        uint256 roundIdCoston = FdcBase.stringToUint(vm.readLine(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston_roundId.txt")));
+        console.log("Files read successfully. Retrieving proof for Coston EVM transaction...");
         IEVMTransaction.Proof memory evmCostonProof = retrieveEvmProof(evmCostonRequest, roundIdCoston);
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston_proof.txt", StringsBase.toHexString(abi.encode(evmCostonProof)), true);
         console.log("Coston EVM proof retrieved and saved.");
 
-        // Retrieve Coston2 EVM Proof
-        bytes memory evmCoston2Request = vm.parseBytes(vm.readLine(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_request.txt")));
-        uint256 roundIdCoston2 = vm.parseUint(vm.readLine(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_roundId.txt")));
+        // --- Retrieve Coston2 EVM Proof ---
+        console.log("\nReading Coston2 EVM proof files...");
+        // CORRECTED: Use vm.readFile for the long hex string.
+        bytes memory evmCoston2Request = vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_request.txt")));
+        uint256 roundIdCoston2 = FdcBase.stringToUint(vm.readLine(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_roundId.txt")));
+        console.log("Files read successfully. Retrieving proof for Coston2 EVM transaction...");
         IEVMTransaction.Proof memory evmCoston2Proof = retrieveEvmProof(evmCoston2Request, roundIdCoston2);
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_proof.txt", StringsBase.toHexString(abi.encode(evmCoston2Proof)), true);
         console.log("Coston2 EVM proof retrieved and saved.");
+        
+        console.log("\n--- RetrieveProofs script finished successfully! ---");
     }
 
     function retrieveWeb2JsonProof(bytes memory req, uint256 roundId) internal returns (IWeb2Json.Proof memory) {
-        bytes memory proofData = FdcBase.retrieveProofWithPolling("Web2Json", StringsBase.toHexString(req), roundId);
+        bytes memory proofData = FdcBase.retrieveProofWithPolling(FDC_PROTOCOL_ID, StringsBase.toHexString(req), roundId);
         FdcBase.ParsableProof memory p = abi.decode(proofData, (FdcBase.ParsableProof));
         IWeb2Json.Response memory r = abi.decode(p.responseHex, (IWeb2Json.Response));
         return IWeb2Json.Proof(p.proofs, r);
     }
 
     function retrieveEvmProof(bytes memory req, uint256 roundId) internal returns (IEVMTransaction.Proof memory) {
-        bytes memory proofData = FdcBase.retrieveProofWithPolling("EVMTransaction", StringsBase.toHexString(req), roundId);
+        bytes memory proofData = FdcBase.retrieveProofWithPolling(FDC_PROTOCOL_ID, StringsBase.toHexString(req), roundId);
         FdcBase.ParsableProof memory p = abi.decode(proofData, (FdcBase.ParsableProof));
         IEVMTransaction.Response memory r = abi.decode(p.responseHex, (IEVMTransaction.Response));
         return IEVMTransaction.Proof(p.proofs, r);
