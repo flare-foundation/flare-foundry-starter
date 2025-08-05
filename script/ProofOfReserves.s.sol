@@ -129,11 +129,11 @@ contract PrepareRequests is Script {
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "Web2Json_request.txt", StringsBase.toHexString(web2JsonRequest), true);
         console.log("Web2Json request prepared and saved.");
 
-        bytes memory evmCostonRequest = prepareEvmTxRequest("testSGB", "sgb", txHashCoston);
+        bytes memory evmCostonRequest = prepareEvmTransactionRequest("testSGB", "sgb", txHashCoston);
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston_request.txt", StringsBase.toHexString(evmCostonRequest), true);
         console.log("Coston EVM Tx request prepared and saved.");
 
-        bytes memory evmCoston2Request = prepareEvmTxRequest("testFLR", "flr", txHashCoston2);
+        bytes memory evmCoston2Request = prepareEvmTransactionRequest("testFLR", "flr", txHashCoston2);
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_request.txt", StringsBase.toHexString(evmCoston2Request), true);
         console.log("Coston2 EVM Tx request prepared and saved.");
     }
@@ -147,7 +147,7 @@ contract PrepareRequests is Script {
         return FdcBase.prepareFdcRequest(url, "Web2Json", "PublicWeb2", requestBody);
     }
 
-    function prepareEvmTxRequest(string memory sourceId, string memory urlTypeBase, string memory txHash) internal returns (bytes memory) {
+    function prepareEvmTransactionRequest(string memory sourceId, string memory urlTypeBase, string memory txHash) internal returns (bytes memory) {
         string memory requestBody = string.concat('{"transactionHash":"', txHash, '","requiredConfirmations":"1","provideInput":true,"listEvents":true,"logIndices":[]}');
         string memory url = string.concat(vm.envString("VERIFIER_URL_TESTNET"), "verifier/", urlTypeBase, "/EVMTransaction/prepareRequest");
         return FdcBase.prepareFdcRequest(url, "EVMTransaction", sourceId, requestBody);
