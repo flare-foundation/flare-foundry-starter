@@ -14,7 +14,7 @@ import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol
 string constant FDC_DATA_DIR = "data/weatherInsurance/";
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
 
-// forge script script/weatherInsurance/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify -vvvv
+// forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify -vvvv
 contract DeployAgency is Script {
     function run() external {
         vm.createDir(FDC_DATA_DIR, true);
@@ -53,7 +53,7 @@ contract WeatherScriptBase is Script {
 }
 
 
-// forge script script/weatherInsurance/MinTemp.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast -vvvv
+// forge script script/MinTemp.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast -vvvv
 contract CreatePolicy is WeatherScriptBase {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -81,7 +81,7 @@ contract CreatePolicy is WeatherScriptBase {
     }
 }
 
-// forge script script/weatherInsurance/MinTemp.s.sol:ClaimPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
+// forge script script/MinTemp.s.sol:ClaimPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract ClaimPolicy is WeatherScriptBase {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY"); // Using same key for simplicity
@@ -100,7 +100,7 @@ contract ClaimPolicy is WeatherScriptBase {
     }
 }
 
-// forge script script/weatherInsurance/MinTemp.s.sol:ResolvePolicy --rpc-url $COSTON2_RPC_URL --broadcast --ffi --sig "run(uint256)" <POLICY_ID>
+// forge script script/MinTemp.s.sol:ResolvePolicy --rpc-url $COSTON2_RPC_URL --broadcast --ffi --sig "run(uint256)" <POLICY_ID>
 contract ResolvePolicy is WeatherScriptBase {
     using Surl for *;
 
@@ -192,7 +192,7 @@ contract ResolvePolicy is WeatherScriptBase {
     }
 }
 
-// forge script script/weatherInsurance/MinTemp.s.sol:ExpirePolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
+// forge script script/MinTemp.s.sol:ExpirePolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract ExpirePolicy is WeatherScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -206,7 +206,7 @@ contract ExpirePolicy is WeatherScriptBase {
     }
 }
 
-// forge script script/weatherInsurance/MinTemp.s.sol:RetireUnclaimedPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
+// forge script script/MinTemp.s.sol:RetireUnclaimedPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract RetireUnclaimedPolicy is WeatherScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
