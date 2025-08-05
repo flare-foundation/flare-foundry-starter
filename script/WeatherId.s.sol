@@ -20,37 +20,49 @@ contract DeployAgency is Script {
         vm.startBroadcast(deployerPrivateKey);
         WeatherIdAgency agency = new WeatherIdAgency();
         vm.stopBroadcast();
-        // save the address to the data/weatherInsurance/weatherId file
+        
         string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
-        string memory json = string.concat('{"address":"', vm.toString(address(agency)), '"}');
+        string memory json = string.concat('{"weatherIdAgencyAddress":"', vm.toString(address(agency)), '"}');
         vm.writeFile(filePath, json);
+        
         console.log("WeatherIdAgency deployed to:", address(agency));
-        console.log("\nACTION REQUIRED: Update script/weatherInsurance/WeatherIdConfig.s.sol with this address.");
+        console.log("Configuration saved to:", filePath);
     }
 }
 
+contract WeatherIdScriptBase is Script {
+    /**
+     * @notice Reads the agency address from the JSON config file and returns an initialized contract instance.
+     */
+    function _getAgency() internal returns (WeatherIdAgency) {
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
+        
+        string memory json = vm.readFile(filePath);
+
+        address agencyAddress = vm.parseJsonAddress(json, ".weatherIdAgencyAddress");
+        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
+        return WeatherIdAgency(agencyAddress);
+    }
+}
+
+
 // forge script script/weatherInsurance/WeatherId.s.sol:CreatePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY
-contract CreatePolicy is Script {
+contract CreatePolicy is WeatherIdScriptBase {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
-        WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
+        
+        WeatherIdAgency agency = _getAgency();
 
         // --- Get exact coordinates from OpenWeatherMap ---
         string memory apiKey = vm.envString("OPEN_WEATHER_API_KEY");
         require(bytes(apiKey).length > 0, "OPEN_WEATHER_API_KEY must be set in your .env file");
         
-        string memory url = string.concat("https://api.openweathermap.org/data/2.5/weather?lat=46.419&lon=15.587&appid=", apiKey, "&units=metric");
+        // Using Miami, FL coordinates as it is currently ~5 PM EDT on an August evening.
+        string memory url = string.concat("https://api.openweathermap.org/data/2.5/weather?lat=25.7617&lon=-80.1918&appid=", apiKey, "&units=metric");
         console.log("Fetching exact coordinates from OpenWeatherMap...");
         
-        string[] memory inputs = new string[](3);
-        inputs[0] = "curl";
-        inputs[1] = "-s";
-        inputs[2] = url;
+        string[] memory inputs = new string[]{"curl", "-s", url};
         string memory jsonResponse = string(vm.ffi(inputs));
         
         string memory latString = vm.parseJsonString(jsonResponse, ".coord.lat");
@@ -62,7 +74,7 @@ contract CreatePolicy is Script {
         // --- Policy Parameters ---
         uint256 startOffset = 120; // Starts in 2 minutes
         uint256 duration = 60 * 60; // Lasts 1 hour
-        uint256 weatherIdThreshold = 800;
+        uint256 weatherIdThreshold = 800; // ID for "clear sky" is 800. Payout if weather is not clear.
         uint256 premium = 0.01 ether;
         uint256 coverage = 0.1 ether;
         uint256 startTimestamp = block.timestamp + startOffset;
@@ -78,15 +90,12 @@ contract CreatePolicy is Script {
 }
 
 // forge script script/weatherInsurance/WeatherId.s.sol:ClaimPolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
-contract ClaimPolicy is Script {
+contract ClaimPolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
-        WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
+        
+        WeatherIdAgency agency = _getAgency();
+        
         WeatherIdAgency.Policy memory policy = agency.getPolicy(policyId);
         require(policy.status == WeatherIdAgency.PolicyStatus.Unclaimed, "Policy already claimed or settled");
         
@@ -94,23 +103,17 @@ contract ClaimPolicy is Script {
         agency.claimPolicy{value: policy.coverage}(policyId);
         vm.stopBroadcast();
         
-        console.log(string.concat("Policy ", Strings.toString(policyId), " claimed successfully by insurer: ", StringsBase.toHexString(abi.encodePacked(vm.addr(insurerPrivateKey)))));
+        console.log("Policy", policyId, "claimed successfully by insurer:", vm.addr(insurerPrivateKey));
     }
 }
 
 // forge script script/weatherInsurance/WeatherId.s.sol:ResolvePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID> --no-cache
-contract ResolvePolicy is Script {
+contract ResolvePolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         console.log("--- Starting ResolvePolicy script on Chain ID:", block.chainid, "---");
         require(block.chainid == 114, "This script must be run on Coston2.");
 
-        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
-        
-        WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
+        WeatherIdAgency agency = _getAgency();
         WeatherIdAgency.Policy memory policy = agency.getPolicy(policyId);
         
         bytes memory abiEncodedRequest = _prepareFdcRequest(policy.latitude, policy.longitude);
@@ -118,33 +121,22 @@ contract ResolvePolicy is Script {
         uint256 submissionTimestamp = FdcBase.submitAttestationRequest(abiEncodedRequest);
         uint256 submissionRoundId = FdcBase.calculateRoundId(submissionTimestamp);
         
-        _waitForFinalizationAndRetrieveProof(submissionRoundId, abiEncodedRequest, policyId);
-    }
-
-    // todo: fix Da layer polling
-    function _waitForFinalizationAndRetrieveProof(uint256 roundId, bytes memory abiEncodedRequest, uint256 policyId) private {
-        // Use the standardized function from Base.s.sol which includes both waiting for finalization and polling
+        // Retrieve proof and resolve the policy in one flow
         bytes memory proofData = FdcBase.retrieveProofWithPolling(
             FDC_PROTOCOL_ID,
             StringsBase.toHexString(abiEncodedRequest),
-            roundId
+            submissionRoundId
         );
-        _resolvePolicyWithProof(policyId, proofData);
+        _resolvePolicyWithProof(agency, policyId, proofData);
     }
     
-    function _resolvePolicyWithProof(uint256 policyId, bytes memory proofData) private {
+    function _resolvePolicyWithProof(WeatherIdAgency agency, uint256 policyId, bytes memory proofData) private {
         FdcBase.ParsableProof memory parsableProof = abi.decode(proofData, (FdcBase.ParsableProof));
         IWeb2Json.Response memory proofResponse = abi.decode(parsableProof.responseHex, (IWeb2Json.Response));
         IWeb2Json.Proof memory finalProof = IWeb2Json.Proof(parsableProof.proofs, proofResponse);
 
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
-        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
-        WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
-
+        
         vm.startBroadcast(privateKey);
         agency.resolvePolicy(policyId, finalProof);
         vm.stopBroadcast();
@@ -180,28 +172,17 @@ contract ResolvePolicy is Script {
         string memory postProcessJq = '{latitude: (.coord.lat | if . != null then .*1000000 else 0 end | floor),longitude: (.coord.lon | if . != null then .*1000000 else 0 end | floor),weatherId: .weather[0].id,weatherMain: .weather[0].main,description: .weather[0].description,temperature: (.main.temp | if . != null then .*1000000 else 0 end | floor),windSpeed: (.wind.speed | if . != null then . *1000000 else 0 end | floor),windDeg: .wind.deg}';
         string memory abiSignature = '{\\"components\\":[{\\"internalType\\":\\"int256\\",\\"name\\":\\"latitude\\",\\"type\\":\\"int256\\\"},{\\"internalType\\":\\"int256\\",\\"name\\":\\"longitude\\",\\"type\\":\\"int256\\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"weatherId\\",\\"type\\":\\"uint256\\\"},{\\"internalType\\":\\"string\\",\\"name\\":\\"weatherMain\\",\\"type\\":\\"string\\\"},{\\"internalType\\":\\"string\\",\\"name\\":\\"description\\",\\"type\\":\\"string\\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"temperature\\",\\"type\\":\\"uint256\\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"windSpeed\\",\\"type\\":\\"uint256\\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"windDeg\\",\\"type\\":\\"uint256\\\"}],\\"name\\":\\"dto\\",\\"type\\":\\"tuple\\"}';
 
-        return string.concat(
-            '{"url":"https://api.openweathermap.org/data/2.5/weather","httpMethod":"GET","headers":"{}","queryParams":"',
-            queryParams,
-            '","body":"{}","postProcessJq":"',
-            postProcessJq,
-            '","abiSignature":"',
-            abiSignature,
-            '"}'
-        );
+        return string.concat('{"url":"https://api.openweathermap.org/data/2.5/weather","httpMethod":"GET","headers":"{}","queryParams":"',queryParams,'","body":"{}","postProcessJq":"',postProcessJq,'","abiSignature":"',abiSignature,'"}');
     }
 }
 
 // forge script script/weatherInsurance/WeatherId.s.sol:ExpirePolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
-contract ExpirePolicy is Script {
+contract ExpirePolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
-        WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
+        
+        WeatherIdAgency agency = _getAgency();
+        
         vm.startBroadcast(deployerPrivateKey);
         agency.expirePolicy(policyId);
         vm.stopBroadcast();
@@ -210,15 +191,12 @@ contract ExpirePolicy is Script {
 }
 
 // forge script script/weatherInsurance/WeatherId.s.sol:RetireUnclaimedPolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
-contract RetireUnclaimedPolicy is Script {
+contract RetireUnclaimedPolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
-        WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
+
+        WeatherIdAgency agency = _getAgency();
+
         vm.startBroadcast(deployerPrivateKey);
         agency.retireUnclaimedPolicy(policyId);
         vm.stopBroadcast();

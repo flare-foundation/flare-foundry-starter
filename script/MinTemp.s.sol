@@ -23,27 +23,46 @@ contract DeployAgency is Script {
         MinTempAgency agency = new MinTempAgency();
         vm.stopBroadcast();
         console.log("MinTempAgency deployed to:", address(agency));
-        // save the address to the data/weatherInsurance file
+        
+        // *** FIX: Use a more descriptive key name for clarity. ***
         string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
-        string memory json = string.concat('{"address":"', vm.toString(address(agency)), '"}');
+        string memory json = string.concat('{"agencyAddress":"', vm.toString(address(agency)), '"}');
         vm.writeFile(filePath, json);
         console.log("MinTempAgency address saved to:", filePath);   
     }
 }
 
+contract WeatherScriptBase is Script {
+    /**
+     * @notice Reads the agency address from the JSON config file and returns an initialized contract instance.
+     */
+    function _getAgency() internal returns (MinTempAgency) {
+        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
+        
+        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
+        
+        string memory json = vm.readFile(filePath);
+
+        // Use the robust vm.parseJsonAddress cheatcode with the correct key.
+        // The original code `abi.decode(vm.parseJson(json), (address))` was incorrect and would fail.
+        address agencyAddress = vm.parseJsonAddress(json, ".agencyAddress"); 
+        
+        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
+        return MinTempAgency(agencyAddress);
+    }
+}
+
+
 // forge script script/weatherInsurance/MinTemp.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast -vvvv
-contract CreatePolicy is Script {
+contract CreatePolicy is WeatherScriptBase {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // load the agency address from data/weatherInsurance/MinTempAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        require(agencyAddress != address(0), "Agency address not set in Config.s.sol");
-        MinTempAgency agency = MinTempAgency(agencyAddress);
+        
+        // *** FIX: Replaced duplicated code with a single, correct helper function call. ***
+        MinTempAgency agency = _getAgency();
 
         // Policy Parameters
-        int256 latitude = 46419402; // Scaled by 1e6 (e.g., 46.419402)
+        int256 latitude = 46419402; // Scaled by 1e6 (e.g., 46.419402 for Maribor, Slovenia)
         int256 longitude = 15587079; // Scaled by 1e6 (e.g., 15.587079)
         uint256 startOffset = 180; // Starts in 3 minutes to allow for claiming
         uint256 duration = 60 * 60; // Lasts 1 hour
@@ -63,14 +82,12 @@ contract CreatePolicy is Script {
 }
 
 // forge script script/weatherInsurance/MinTemp.s.sol:ClaimPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
-contract ClaimPolicy is Script {
+contract ClaimPolicy is WeatherScriptBase {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY"); // Using same key for simplicity
-        // load the agency address from data/weatherInsurance/MinTempAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        MinTempAgency agency = MinTempAgency(agencyAddress);
+        
+        // *** FIX: Replaced duplicated code with a single, correct helper function call. ***
+        MinTempAgency agency = _getAgency();
         
         MinTempAgency.Policy memory policy = agency.getPolicy(policyId);
         require(policy.status == MinTempAgency.PolicyStatus.Unclaimed, "Policy not in Unclaimed state");
@@ -84,15 +101,12 @@ contract ClaimPolicy is Script {
 }
 
 // forge script script/weatherInsurance/MinTemp.s.sol:ResolvePolicy --rpc-url $COSTON2_RPC_URL --broadcast --ffi --sig "run(uint256)" <POLICY_ID>
-contract ResolvePolicy is Script {
+contract ResolvePolicy is WeatherScriptBase {
     using Surl for *;
 
     function run(uint256 policyId) external {
-        // load the agency address from data/weatherInsurance/MinTempAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        MinTempAgency agency = MinTempAgency(agencyAddress);
+        MinTempAgency agency = _getAgency();
+
         MinTempAgency.Policy memory policy = agency.getPolicy(policyId);
         require(policy.status == MinTempAgency.PolicyStatus.Open, "Policy not in Open state");
         require(block.timestamp > policy.expirationTimestamp, "Policy has not expired yet");
@@ -106,29 +120,19 @@ contract ResolvePolicy is Script {
         uint64 firstVotingRoundStartTs = fsm.firstVotingRoundStartTs();
         uint64 votingEpochDurationSeconds = fsm.votingEpochDurationSeconds();
 
-        // Calculate the round in which the request was submitted
         uint256 submissionRoundId = (submissionTimestamp - firstVotingRoundStartTs) / votingEpochDurationSeconds;
         console.log("Attestation request submitted in voting round:", submissionRoundId);
 
-        // The attestation proof will be available in the *next* voting round.
         uint256 finalizationRoundId = submissionRoundId + 1;
         console.log("Proof will be available for retrieval in round:", finalizationRoundId);
 
-        // Calculate the end time of the finalization round
         uint256 finalizationRoundEndTs = ((finalizationRoundId + 1) * votingEpochDurationSeconds) + firstVotingRoundStartTs;
+        uint256 targetTimestamp = finalizationRoundEndTs + 20; // Add buffer
         
-        // Add a buffer (e.g., 20 seconds) for the data to propagate to the DA layer
-        uint256 targetTimestamp = finalizationRoundEndTs + 20;
-        uint256 currentTime = block.timestamp;
-        
-        if (targetTimestamp > currentTime) {
-            uint256 waitDuration = targetTimestamp - currentTime;
+        if (targetTimestamp > block.timestamp) {
+            uint256 waitDuration = targetTimestamp - block.timestamp;
             console.log("Waiting for", waitDuration, "seconds for the attestation to be finalized...");
-            string[] memory sleepCmd = new string[](3);
-            sleepCmd[0] = "bash";
-            sleepCmd[1] = "-c";
-            sleepCmd[2] = string.concat("sleep ", Strings.toString(waitDuration));
-            vm.ffi(sleepCmd);
+            vm.sleep(waitDuration);
         }
 
         // 3. Retrieve the proof off-chain from the DA layer
@@ -139,27 +143,9 @@ contract ResolvePolicy is Script {
         );
         string memory url = string.concat(vm.envString("COSTON2_DA_LAYER_URL"), "api/v1/fdc/proof-by-request-round-raw");
 
-        bytes memory data;
-        bool success = false;
-        for (uint256 attempt = 0; attempt < 3 && !success; attempt++) {
-            console.log("Attempt %d to retrieve proof for round %d...", attempt + 1, finalizationRoundId);
-            (, data) = url.post(headers, body);
-            string memory dataString = string(data);
-            if (bytes(dataString).length > 50) { // Check for a reasonable response length
-                success = true;
-                console.log("Successfully retrieved proof from DA layer.");
-            } else {
-                console.log("Error from DA layer (or request not found):", dataString);
-                if (attempt < 2) {
-                    string[] memory retrySleepCmd = new string[](3);
-                    retrySleepCmd[0] = "bash";
-                    retrySleepCmd[1] = "-c";
-                    retrySleepCmd[2] = "sleep 10";
-                    vm.ffi(retrySleepCmd);
-                }
-            }
-        }
-        require(success, "Failed to retrieve proof after all retries.");
+        // todo: fix polling
+        bytes memory data = FdcBase.retrieveProofWithPolling(url, headers, body);
+        require(data.length > 0, "Failed to retrieve proof after multiple attempts.");
 
         // 4. Parse the proof
         bytes memory dataJson = FdcBase.parseData(data);
@@ -207,14 +193,11 @@ contract ResolvePolicy is Script {
 }
 
 // forge script script/weatherInsurance/MinTemp.s.sol:ExpirePolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
-contract ExpirePolicy is Script {
+contract ExpirePolicy is WeatherScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // load the agency address from data/weatherInsurance/MinTempAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        MinTempAgency agency = MinTempAgency(agencyAddress);
+        
+        MinTempAgency agency = _getAgency();
 
         vm.startBroadcast(deployerPrivateKey);
         agency.expirePolicy(policyId);
@@ -222,15 +205,13 @@ contract ExpirePolicy is Script {
         console.log("Attempted to expire policy", policyId);
     }
 }
+
 // forge script script/weatherInsurance/MinTemp.s.sol:RetireUnclaimedPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
-contract RetireUnclaimedPolicy is Script {
+contract RetireUnclaimedPolicy is WeatherScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // load the agency address from data/weatherInsurance/MinTempAgency.json
-        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = abi.decode(vm.parseJson(json), (address));
-        MinTempAgency agency = MinTempAgency(agencyAddress);
+        
+        MinTempAgency agency = _getAgency();
 
         vm.startBroadcast(deployerPrivateKey);
         agency.retireUnclaimedPolicy(policyId);
