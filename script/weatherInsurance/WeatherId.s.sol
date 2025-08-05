@@ -7,20 +7,11 @@ import {Base as FdcBase} from "../fdcExample/Base.s.sol";
 import {Base as StringsBase} from "../../src/utils/fdcStrings/Base.sol";
 import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {WeatherIdAgency} from "../../src/weatherInsurance/WeatherIdAgency.sol";
-import {WeatherIdConfig} from "./WeatherIdConfig.s.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 import {IRelay} from "flare-periphery/src/coston2/IRelay.sol";
 
-// =================================================================================
-// Constants
-// =================================================================================
-
 string constant FDC_DATA_DIR_WEATHER_ID = "data/weatherInsurance/weatherId/";
 uint8 constant FDC_PROTOCOL_ID = 200;
-
-// =================================================================================
-// Deploy Script
-// =================================================================================
 
 // forge script script/weatherInsurance/WeatherId.s.sol:DeployAgency --rpc-url coston2 --broadcast --verify --verifier blockscout --verifier-url https://coston2-explorer.flare.network/api/ --private-key $PRIVATE_KEY
 contract DeployAgency is Script {
@@ -29,20 +20,23 @@ contract DeployAgency is Script {
         vm.startBroadcast(deployerPrivateKey);
         WeatherIdAgency agency = new WeatherIdAgency();
         vm.stopBroadcast();
+        // save the address to the data/weatherInsurance/weatherId file
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        string memory json = string.concat('{"address":"', vm.toString(address(agency)), '"}');
+        vm.writeFile(filePath, json);
         console.log("WeatherIdAgency deployed to:", address(agency));
         console.log("\nACTION REQUIRED: Update script/weatherInsurance/WeatherIdConfig.s.sol with this address.");
     }
 }
 
-// =================================================================================
-// Policy Interaction Scripts
-// =================================================================================
-
 // forge script script/weatherInsurance/WeatherId.s.sol:CreatePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY
 contract CreatePolicy is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address agencyAddress = WeatherIdConfig.WEATHER_ID_AGENCY_ADDRESS;
+        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
         require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
         WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
 
@@ -87,9 +81,11 @@ contract CreatePolicy is Script {
 contract ClaimPolicy is Script {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address agencyAddress = WeatherIdConfig.WEATHER_ID_AGENCY_ADDRESS;
-        require(agencyAddress != address(0), "Agency address must be set in config");
-
+        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
+        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
         WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
         WeatherIdAgency.Policy memory policy = agency.getPolicy(policyId);
         require(policy.status == WeatherIdAgency.PolicyStatus.Unclaimed, "Policy already claimed or settled");
@@ -108,8 +104,11 @@ contract ResolvePolicy is Script {
         console.log("--- Starting ResolvePolicy script on Chain ID:", block.chainid, "---");
         require(block.chainid == 114, "This script must be run on Coston2.");
 
-        address agencyAddress = WeatherIdConfig.WEATHER_ID_AGENCY_ADDRESS;
-        require(agencyAddress != address(0), "Agency address must be set in config");
+        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
+        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
         
         WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
         WeatherIdAgency.Policy memory policy = agency.getPolicy(policyId);
@@ -139,7 +138,12 @@ contract ResolvePolicy is Script {
         IWeb2Json.Proof memory finalProof = IWeb2Json.Proof(parsableProof.proofs, proofResponse);
 
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
-        WeatherIdAgency agency = WeatherIdAgency(WeatherIdConfig.WEATHER_ID_AGENCY_ADDRESS);
+        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
+        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
+        WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
 
         vm.startBroadcast(privateKey);
         agency.resolvePolicy(policyId, finalProof);
@@ -192,9 +196,11 @@ contract ResolvePolicy is Script {
 contract ExpirePolicy is Script {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address agencyAddress = WeatherIdConfig.WEATHER_ID_AGENCY_ADDRESS;
-        require(agencyAddress != address(0), "Agency address must be set in config");
-
+        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
+        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
         WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
         vm.startBroadcast(deployerPrivateKey);
         agency.expirePolicy(policyId);
@@ -207,9 +213,11 @@ contract ExpirePolicy is Script {
 contract RetireUnclaimedPolicy is Script {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address agencyAddress = WeatherIdConfig.WEATHER_ID_AGENCY_ADDRESS;
-        require(agencyAddress != address(0), "Agency address must be set in config");
-        
+        // load the agency address from data/weatherInsurance/weatherId/WeatherIdAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
+        require(agencyAddress != address(0), "Agency address not set in WeatherIdConfig.s.sol");
         WeatherIdAgency agency = WeatherIdAgency(agencyAddress);
         vm.startBroadcast(deployerPrivateKey);
         agency.retireUnclaimedPolicy(policyId);

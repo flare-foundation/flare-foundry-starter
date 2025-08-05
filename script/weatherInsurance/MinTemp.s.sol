@@ -8,14 +8,13 @@ import {Base as FdcBase} from "../fdcExample/Base.s.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {MinTempAgency} from "src/weatherInsurance/MinTempAgency.sol";
-import {WeatherInsuranceConfig} from "./Config.s.sol";
 import {IFlareSystemsManager} from "flare-periphery/src/coston2/IFlareSystemsManager.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 
 string constant FDC_DATA_DIR = "data/weatherInsurance/";
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
 
-// forge script script/weatherInsurance/WeatherInsurance.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify -vvvv
+// forge script script/weatherInsurance/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify -vvvv
 contract DeployAgency is Script {
     function run() external {
         vm.createDir(FDC_DATA_DIR, true);
@@ -24,15 +23,22 @@ contract DeployAgency is Script {
         MinTempAgency agency = new MinTempAgency();
         vm.stopBroadcast();
         console.log("MinTempAgency deployed to:", address(agency));
-        console.log("\nACTION REQUIRED: Update script/weatherInsurance/Config.s.sol with this address.");
+        // save the address to the data/weatherInsurance file
+        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
+        string memory json = string.concat('{"address":"', vm.toString(address(agency)), '"}');
+        vm.writeFile(filePath, json);
+        console.log("MinTempAgency address saved to:", filePath);   
     }
 }
 
-// forge script script/weatherInsurance/WeatherInsurance.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast -vvvv
+// forge script script/weatherInsurance/MinTemp.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast -vvvv
 contract CreatePolicy is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address agencyAddress = WeatherInsuranceConfig.MIN_TEMP_AGENCY_ADDRESS;
+        // load the agency address from data/weatherInsurance/MinTempAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
         require(agencyAddress != address(0), "Agency address not set in Config.s.sol");
         MinTempAgency agency = MinTempAgency(agencyAddress);
 
@@ -56,11 +62,14 @@ contract CreatePolicy is Script {
     }
 }
 
-// forge script script/weatherInsurance/WeatherInsurance.s.sol:ClaimPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
+// forge script script/weatherInsurance/MinTemp.s.sol:ClaimPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract ClaimPolicy is Script {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY"); // Using same key for simplicity
-        address agencyAddress = WeatherInsuranceConfig.MIN_TEMP_AGENCY_ADDRESS;
+        // load the agency address from data/weatherInsurance/MinTempAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
         MinTempAgency agency = MinTempAgency(agencyAddress);
         
         MinTempAgency.Policy memory policy = agency.getPolicy(policyId);
@@ -74,12 +83,16 @@ contract ClaimPolicy is Script {
     }
 }
 
-// forge script script/weatherInsurance/WeatherInsurance.s.sol:ResolvePolicy --rpc-url $COSTON2_RPC_URL --broadcast --ffi --sig "run(uint256)" <POLICY_ID>
+// forge script script/weatherInsurance/MinTemp.s.sol:ResolvePolicy --rpc-url $COSTON2_RPC_URL --broadcast --ffi --sig "run(uint256)" <POLICY_ID>
 contract ResolvePolicy is Script {
     using Surl for *;
 
     function run(uint256 policyId) external {
-        MinTempAgency agency = MinTempAgency(WeatherInsuranceConfig.MIN_TEMP_AGENCY_ADDRESS);
+        // load the agency address from data/weatherInsurance/MinTempAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
+        MinTempAgency agency = MinTempAgency(agencyAddress);
         MinTempAgency.Policy memory policy = agency.getPolicy(policyId);
         require(policy.status == MinTempAgency.PolicyStatus.Open, "Policy not in Open state");
         require(block.timestamp > policy.expirationTimestamp, "Policy has not expired yet");
@@ -193,11 +206,14 @@ contract ResolvePolicy is Script {
     }
 }
 
-// forge script script/weatherInsurance/WeatherInsurance.s.sol:ExpirePolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
+// forge script script/weatherInsurance/MinTemp.s.sol:ExpirePolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract ExpirePolicy is Script {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address agencyAddress = WeatherInsuranceConfig.MIN_TEMP_AGENCY_ADDRESS;
+        // load the agency address from data/weatherInsurance/MinTempAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
         MinTempAgency agency = MinTempAgency(agencyAddress);
 
         vm.startBroadcast(deployerPrivateKey);
@@ -206,11 +222,14 @@ contract ExpirePolicy is Script {
         console.log("Attempted to expire policy", policyId);
     }
 }
-// forge script script/weatherInsurance/WeatherInsurance.s.sol:RetireUnclaimedPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
+// forge script script/weatherInsurance/MinTemp.s.sol:RetireUnclaimedPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract RetireUnclaimedPolicy is Script {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address agencyAddress = WeatherInsuranceConfig.MIN_TEMP_AGENCY_ADDRESS;
+        // load the agency address from data/weatherInsurance/MinTempAgency.json
+        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
+        string memory json = vm.readFile(filePath);
+        address agencyAddress = abi.decode(vm.parseJson(json), (address));
         MinTempAgency agency = MinTempAgency(agencyAddress);
 
         vm.startBroadcast(deployerPrivateKey);
