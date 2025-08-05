@@ -19,7 +19,7 @@ string constant ATTESTATION_TYPE_NAME = "Web2Json";
 string constant FDC_DATA_DIR = "data/crossChainFdc/";
 
 // Deploys the core infrastructure contracts on the target non-Flare chain.
-// forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY -vvvv
+//      forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY -vvvv
 contract DeployInfrastructure is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -82,7 +82,7 @@ contract DeployInfrastructure is Script {
 
 // 1. Prepares and submits the FDC request on a Flare Network.
 //    *** RUN THIS SCRIPT ON A FLARE NETWORK (e.g., Coston2) ***
-// forge script script/CrossChainFdc.s.sol:PrepareAndSubmitRequest --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY -vvvv
+//      forge script script/CrossChainFdc.s.sol:PrepareAndSubmitRequest --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY -vvvv
 contract PrepareAndSubmitRequest is Script {
     using Surl for *;
 
@@ -124,7 +124,7 @@ contract PrepareAndSubmitRequest is Script {
 
 // 2. Deploys the consumer contract and delivers the proof to it.
 //    *** RUN THIS SCRIPT ON THE TARGET CHAIN (e.g., Coston2) ***
-// forge script script/CrossChainFdc.s.sol:DeliverProof --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY -vvvv
+//      forge script script/CrossChainFdc.s.sol:DeliverProof --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY -vvvv
 contract DeliverProof is Script {
     using Surl for *;
 

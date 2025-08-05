@@ -13,7 +13,7 @@ import {IRelay} from "flare-periphery/src/coston2/IRelay.sol";
 string constant FDC_DATA_DIR_WEATHER_ID = "data/weatherInsurance/weatherId/";
 uint8 constant FDC_PROTOCOL_ID = 200;
 
-// forge script script/WeatherId.s.sol:DeployAgency --rpc-url coston2 --broadcast --verify --verifier blockscout --verifier-url https://coston2-explorer.flare.network/api/ --private-key $PRIVATE_KEY
+//      forge script script/WeatherId.s.sol:DeployAgency --rpc-url coston2 --broadcast --verify --verifier blockscout --verifier-url https://coston2-explorer.flare.network/api/ --private-key $PRIVATE_KEY
 contract DeployAgency is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -47,7 +47,7 @@ contract WeatherIdScriptBase is Script {
 }
 
 
-// forge script script/WeatherId.s.sol:CreatePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY
+//      forge script script/WeatherId.s.sol:CreatePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY
 contract CreatePolicy is WeatherIdScriptBase {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -92,7 +92,7 @@ contract CreatePolicy is WeatherIdScriptBase {
     }
 }
 
-// forge script script/WeatherId.s.sol:ClaimPolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+//      forge script script/WeatherId.s.sol:ClaimPolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
 contract ClaimPolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -110,7 +110,7 @@ contract ClaimPolicy is WeatherIdScriptBase {
     }
 }
 
-// forge script script/WeatherId.s.sol:ResolvePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID> --no-cache
+//      forge script script/WeatherId.s.sol:ResolvePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID> --no-cache
 contract ResolvePolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         console.log("--- Starting ResolvePolicy script on Chain ID:", block.chainid, "---");
@@ -179,7 +179,7 @@ contract ResolvePolicy is WeatherIdScriptBase {
     }
 }
 
-// forge script script/WeatherId.s.sol:ExpirePolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+//      forge script script/WeatherId.s.sol:ExpirePolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
 contract ExpirePolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -193,7 +193,7 @@ contract ExpirePolicy is WeatherIdScriptBase {
     }
 }
 
-// forge script script/WeatherId.s.sol:RetireUnclaimedPolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+//      forge script script/WeatherId.s.sol:RetireUnclaimedPolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
 contract RetireUnclaimedPolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
