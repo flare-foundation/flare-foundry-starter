@@ -4,22 +4,22 @@ pragma solidity ^0.8.25;
 import {Script, console} from "forge-std/Script.sol";
 import {Surl} from "surl/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {Base as FdcBase} from "../fdcExample/Base.s.sol";
-import {Base as StringsBase} from "../../src/utils/fdcStrings/Base.sol";
+import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
+import {Base as StringsBase} from "../src/utils/fdcStrings/Base.sol";
 import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {IRelay} from "flare-periphery/src/coston2/IRelay.sol";
 import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
-import {StarWarsCharacterListV3, IStarWarsCharacterListV3, StarWarsCharacter} from "../../src/crossChainFdc/Web2Json.sol";
-import {AddressUpdater} from "../../src/crossChainFdc/AddressUpdater.sol";
-import {FdcVerification} from "../../src/crossChainFdc/FdcVerification.sol";
-import {IIAddressUpdatable} from "../../src/crossChainFdc/IIAddressUpdatable.sol";
+import {StarWarsCharacterListV3, IStarWarsCharacterListV3, StarWarsCharacter} from "../src/crossChainFdc/Web2Json.sol";
+import {AddressUpdater} from "../src/crossChainFdc/AddressUpdater.sol";
+import {FdcVerification} from "../src/crossChainFdc/FdcVerification.sol";
+import {IIAddressUpdatable} from "../src/crossChainFdc/IIAddressUpdatable.sol";
 
 // --- Configuration ---
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
 string constant FDC_DATA_DIR = "data/crossChainFdc/";
 
 // Deploys the core infrastructure contracts on the target non-Flare chain.
-// forge script script/crossChainFdc/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY -vvvv
+// forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY -vvvv
 contract DeployInfrastructure is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -82,7 +82,7 @@ contract DeployInfrastructure is Script {
 
 // 1. Prepares and submits the FDC request on a Flare Network.
 //    *** RUN THIS SCRIPT ON A FLARE NETWORK (e.g., Coston2) ***
-// forge script script/crossChainFdc/CrossChainFdc.s.sol:PrepareAndSubmitRequest --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY -vvvv
+// forge script script/CrossChainFdc.s.sol:PrepareAndSubmitRequest --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY -vvvv
 contract PrepareAndSubmitRequest is Script {
     using Surl for *;
 
@@ -124,7 +124,7 @@ contract PrepareAndSubmitRequest is Script {
 
 // 2. Deploys the consumer contract and delivers the proof to it.
 //    *** RUN THIS SCRIPT ON THE TARGET CHAIN (e.g., Coston2) ***
-// forge script script/crossChainFdc/CrossChainFdc.s.sol:DeliverProof --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY -vvvv
+// forge script script/CrossChainFdc.s.sol:DeliverProof --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY -vvvv
 contract DeliverProof is Script {
     using Surl for *;
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.25;
 import {Script, console} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {Surl} from "surl/Surl.sol";
-import {Base as FdcBase} from "../fdcExample/Base.s.sol";
+import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
 import {Base as StringsBase} from "../../src/utils/fdcStrings/Base.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
@@ -21,8 +21,8 @@ using stdJson for string;
 
 // Deploys contracts. Run once for Coston and once for Coston2.
 // This script creates/updates the central `ProofOfReserves.json` config file.
-// forge script script/proofOfReserves/ProofOfReserves.s.sol:Deploy --rpc-url coston --broadcast -vvvv
-// forge script script/proofOfReserves/ProofOfReserves.s.sol:Deploy --rpc-url coston2 --broadcast -vvvv
+// forge script script/ProofOfReserves.s.sol:Deploy --rpc-url coston --broadcast -vvvv
+// forge script script/ProofOfReserves.s.sol:Deploy --rpc-url coston2 --broadcast -vvvv
 contract Deploy is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -65,8 +65,8 @@ contract Deploy is Script {
 
 // Creates transactions on Coston and Coston2 to emit provable events.
 // This script now automatically saves the transaction hash to the JSON config file.
-// forge script script/proofOfReserves/ProofOfReserves.s.sol:ActivateReaders --rpc-url coston --broadcast -vvvv
-// forge script script/proofOfReserves/ProofOfReserves.s.sol:ActivateReaders --rpc-url coston2 --broadcast -vvvv
+// forge script script/ProofOfReserves.s.sol:ActivateReaders --rpc-url coston --broadcast -vvvv
+// forge script script/ProofOfReserves.s.sol:ActivateReaders --rpc-url coston2 --broadcast -vvvv
 contract ActivateReaders is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -113,7 +113,7 @@ contract ActivateReaders is Script {
 }
 
 // Step 1: Prepare all attestation requests and save them to files.
-// forge script script/proofOfReserves/ProofOfReserves.s.sol:PrepareRequests --rpc-url coston2 --ffi -vvvv
+// forge script script/ProofOfReserves.s.sol:PrepareRequests --rpc-url coston2 --ffi -vvvv
 contract PrepareRequests is Script {
     function run() external {
         vm.createDir(FDC_DATA_DIR_POR, true);
@@ -155,7 +155,7 @@ contract PrepareRequests is Script {
 }
 
 // Step 2: Submit requests and save the voting round IDs.
-// forge script script/proofOfReserves/ProofOfReserves.s.sol:SubmitRequests --rpc-url coston2 --broadcast -vvvv
+// forge script script/ProofOfReserves.s.sol:SubmitRequests --rpc-url coston2 --broadcast -vvvv
 contract SubmitRequests is Script {
     function run() external {
         _submitRequest("Web2Json");
@@ -175,7 +175,7 @@ contract SubmitRequests is Script {
 }
 
 // Step 3: Retrieve proofs and save them to files.
-// forge script script/proofOfReserves/ProofOfReserves.s.sol:RetrieveProofs --rpc-url coston2 --ffi -vvvv
+// forge script script/ProofOfReserves.s.sol:RetrieveProofs --rpc-url coston2 --ffi -vvvv
 contract RetrieveProofs is Script {
     uint8 constant FDC_PROTOCOL_ID = 200;
 
@@ -215,7 +215,7 @@ contract RetrieveProofs is Script {
 }
 
 // Step 4: Read proofs from files and call the verification contract.
-// forge script script/proofOfReserves/ProofOfReserves.s.sol:VerifyReserves --rpc-url coston2 --broadcast -vvvv
+// forge script script/ProofOfReserves.s.sol:VerifyReserves --rpc-url coston2 --broadcast -vvvv
 contract VerifyReserves is Script {
     function run() external {
         IWeb2Json.Proof memory web2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "Web2Json_proof.txt"))), (IWeb2Json.Proof));

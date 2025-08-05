@@ -4,7 +4,7 @@ pragma solidity ^0.8.25;
 import {Script, console} from "forge-std/Script.sol";
 import {Surl} from "surl/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {Base as FdcBase} from "../fdcExample/Base.s.sol";
+import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {MinTempAgency} from "src/weatherInsurance/MinTempAgency.sol";
