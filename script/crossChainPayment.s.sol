@@ -12,15 +12,12 @@ import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol
 import {NFTMinter, TokenTransfer} from "../src/crossChainPayment/Minter.sol";
 import {MyNFT} from "../src/crossChainPayment/NFT.sol";
 
-// --- Base contract for shared configuration and utilities ---
-contract CrossChainPaymentBase is Script {
-    string constant dirPath = "data/crossChainPayment/";
-    string constant ATTESTATION_TYPE_NAME = "EVMTransaction";
-}
+string constant dirPath = "data/crossChainPayment/";
+string constant attestationTypeName = "EVMTransaction";
 
 // Deploys contracts and writes their addresses to individual .txt files.
-//      forge script script/crossChainPayment.s.sol:DeployCrossChainPayment --rpc-url coston2 --broadcast
-contract DeployCrossChainPayment is CrossChainPaymentBase {
+//      forge script script/crossChainPayment.s.sol:DeployCrossChainPayment --rpc-url $COSTON2_RPC_URL --broadcast
+contract DeployCrossChainPayment is Script {
     function run() external returns (address nftAddr, address minterAddr) {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployerAddress = vm.addr(deployerPrivateKey);
@@ -54,60 +51,60 @@ contract DeployCrossChainPayment is CrossChainPaymentBase {
 }
 
 // 1. Prepares the FDC request by calling the verifier API.
-//      forge script script/crossChainPayment.s.sol:PrepareAttestationRequest --rpc-url coston2 --broadcast --ffi
-contract PrepareAttestationRequest is CrossChainPaymentBase {
+//      forge script script/crossChainPayment.s.sol:PrepareAttestationRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi
+contract PrepareAttestationRequest is Script {
     using Surl for *;
-
-    string public constant TRANSACTION_HASH = "0x4e636c6590b22d8dcdade7ee3b5ae5572f42edb1878f09b3034b2f7c3362ef3c";
-    string public constant SOURCE_NAME = "testETH";
-    string public constant BASE_SOURCE_NAME = "eth";
+    // change constants to camelCase
+    string public constant transactionHash = "0x4e636c6590b22d8dcdade7ee3b5ae5572f42edb1878f09b3034b2f7c3362ef3c";
+    string public constant sourceName = "testETH";
+    string public constant baseSourceName = "eth";
 
     function prepareRequestBody() private pure returns (string memory) {
-        return string.concat('{"transactionHash":"', TRANSACTION_HASH, '","requiredConfirmations":"1","provideInput":true,"listEvents":true,"logIndices":[]}');
+        return string.concat('{"transactionHash":"', transactionHash, '","requiredConfirmations":"1","provideInput":true,"listEvents":true,"logIndices":[]}');
     }
 
     function run() external {
         vm.createDir(dirPath, true);
 
-        string memory attestationType = FdcBase.toUtf8HexString(ATTESTATION_TYPE_NAME);
-        string memory sourceId = FdcBase.toUtf8HexString(SOURCE_NAME);
+        string memory attestationType = FdcBase.toUtf8HexString(attestationTypeName);
+        string memory sourceId = FdcBase.toUtf8HexString(sourceName);
         string memory requestBody = prepareRequestBody();
 
         (string[] memory headers, string memory body) = FdcBase.prepareAttestationRequest(attestationType, sourceId, requestBody);
 
         string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
-        string memory url = string.concat(baseUrl, "verifier/", BASE_SOURCE_NAME, "/", ATTESTATION_TYPE_NAME, "/prepareRequest");
+        string memory url = string.concat(baseUrl, "verifier/", baseSourceName, "/", attestationTypeName, "/prepareRequest");
         console.log("Calling Verifier URL:", url);
 
         (, bytes memory data) = url.post(headers, body);
         FdcBase.AttestationResponse memory response = FdcBase.parseAttestationRequest(data);
 
-        FdcBase.writeToFile(dirPath, string.concat(ATTESTATION_TYPE_NAME, "_abiEncodedRequest.txt"), StringsBase.toHexString(response.abiEncodedRequest), true);
+        FdcBase.writeToFile(dirPath, string.concat(attestationTypeName, "_abiEncodedRequest.txt"), StringsBase.toHexString(response.abiEncodedRequest), true);
         console.log("Successfully prepared attestation request and saved to file.");
     }
 }
 
 // 2. Submits the prepared request to the FDC Hub on Flare.
-//      forge script script/crossChainPayment.s.sol:SubmitAttestationRequest --rpc-url coston2 --broadcast
-contract SubmitAttestationRequest is CrossChainPaymentBase {
+//      forge script script/crossChainPayment.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --broadcast
+contract SubmitAttestationRequest is Script {
     function run() external {
-        string memory requestStr = vm.readFile(string.concat(dirPath, ATTESTATION_TYPE_NAME, "_abiEncodedRequest.txt"));
+        string memory requestStr = vm.readFile(string.concat(dirPath, attestationTypeName, "_abiEncodedRequest.txt"));
         bytes memory request = vm.parseBytes(requestStr);
 
         uint256 timestamp = FdcBase.submitAttestationRequest(request);
         uint256 votingRoundId = FdcBase.calculateRoundId(timestamp);
 
-        FdcBase.writeToFile(dirPath, string.concat(ATTESTATION_TYPE_NAME, "_votingRoundId.txt"), Strings.toString(votingRoundId), true);
+        FdcBase.writeToFile(dirPath, string.concat(attestationTypeName, "_votingRoundId.txt"), Strings.toString(votingRoundId), true);
         console.log("Successfully submitted request. Voting Round ID:", votingRoundId);
     }
 }
 
 // 3. Retrieves the proof from the DA Layer after the round is finalized.
-//      forge script script/crossChainPayment.s.sol:RetrieveProof --rpc-url coston2 --broadcast --ffi
-contract RetrieveProof is CrossChainPaymentBase {
+//      forge script script/crossChainPayment.s.sol:RetrieveProof --rpc-url $COSTON2_RPC_URL --broadcast --ffi
+contract RetrieveProof is Script {
     function run() external {
-        string memory requestHex = vm.readFile(string.concat(dirPath, ATTESTATION_TYPE_NAME, "_abiEncodedRequest.txt"));
-        string memory votingRoundIdStr = vm.readFile(string.concat(dirPath, ATTESTATION_TYPE_NAME, "_votingRoundId.txt"));
+        string memory requestHex = vm.readFile(string.concat(dirPath, attestationTypeName, "_abiEncodedRequest.txt"));
+        string memory votingRoundIdStr = vm.readFile(string.concat(dirPath, attestationTypeName, "_votingRoundId.txt"));
         uint256 votingRoundId = FdcBase.stringToUint(votingRoundIdStr);
 
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
@@ -119,20 +116,20 @@ contract RetrieveProof is CrossChainPaymentBase {
         IEVMTransaction.Response memory proofResponse = abi.decode(proof.responseHex, (IEVMTransaction.Response));
         IEVMTransaction.Proof memory finalProof = IEVMTransaction.Proof(proof.proofs, proofResponse);
 
-        FdcBase.writeToFile(dirPath, string.concat(ATTESTATION_TYPE_NAME, "_proof.txt"), StringsBase.toHexString(abi.encode(finalProof)), true);
+        FdcBase.writeToFile(dirPath, string.concat(attestationTypeName, "_proof.txt"), StringsBase.toHexString(abi.encode(finalProof)), true);
         console.log("Successfully retrieved proof and saved to file.");
     }
 }
 // 4. Sends the final proof to the NFTMinter contract to mint the NFT.
-//      forge script script/crossChainPayment.s.sol:MintNFT --rpc-url coston2 --broadcast --ffi
-contract MintNFT is CrossChainPaymentBase {
+//      forge script script/crossChainPayment.s.sol:MintNFT --rpc-url $COSTON2_RPC_URL --broadcast --ffi
+contract MintNFT is Script {
     function run() external {
         string memory configPath = string.concat(dirPath, "_minterAddress.txt");
         require(vm.exists(configPath), "Config file not found. Run DeployCrossChainPayment first.");
         address minterAddress = vm.parseAddress(vm.readFile(configPath));
         require(minterAddress != address(0), "Minter address not found in config file.");
 
-        string memory proofString = vm.readFile(string.concat(dirPath, ATTESTATION_TYPE_NAME, "_proof.txt"));
+        string memory proofString = vm.readFile(string.concat(dirPath, attestationTypeName, "_proof.txt"));
         bytes memory proofBytes = vm.parseBytes(proofString);
         IEVMTransaction.Proof memory proof = abi.decode(proofBytes, (IEVMTransaction.Proof));
 

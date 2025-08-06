@@ -12,9 +12,9 @@ import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol
 import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 
 string constant dirPath = "data/weatherInsurance/weatherId/";
-string constant ATTESTATION_TYPE_NAME = "Web2Json";
+string constant attestationTypeName = "Web2Json";
 
-//      forge script script/WeatherId.s.sol:DeployAgency --rpc-url coston2 --broadcast --verify --verifier blockscout --verifier-url https://coston2-explorer.flare.network/api/ --private-key $PRIVATE_KEY
+//      forge script script/WeatherId.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast
 contract DeployAgency is Script {
     function run() external {
         vm.createDir(dirPath, true);
@@ -43,8 +43,7 @@ contract WeatherIdScriptBase is Script {
     }
 }
 
-
-//      forge script script/WeatherId.s.sol:CreatePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY
+//      forge script script/WeatherId.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 contract CreatePolicy is WeatherIdScriptBase {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -85,7 +84,7 @@ contract CreatePolicy is WeatherIdScriptBase {
     }
 }
 
-//      forge script script/WeatherId.s.sol:ClaimPolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+//      forge script script/WeatherId.s.sol:ClaimPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract ClaimPolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -102,7 +101,7 @@ contract ClaimPolicy is WeatherIdScriptBase {
 }
 
 // STEP 1: Prepare the FDC request and save it to a file.
-//      forge script script/WeatherId.s.sol:PrepareResolveRequest --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+//      forge script script/WeatherId.s.sol:PrepareResolveRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi --sig "run(uint256)" <POLICY_ID>
 contract PrepareResolveRequest is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         console.log("--- Step 1: Preparing resolve request for policy", policyId, "---");
@@ -122,7 +121,7 @@ contract PrepareResolveRequest is WeatherIdScriptBase {
         string memory url = string.concat(vm.envString("WEB2JSON_VERIFIER_URL_TESTNET"), "Web2Json/prepareRequest");
         
         (string[] memory headers, string memory body) = FdcBase.prepareAttestationRequest(
-            FdcBase.toUtf8HexString("Web2Json"), 
+            FdcBase.toUtf8HexString(attestationTypeName), 
             FdcBase.toUtf8HexString("PublicWeb2"), 
             requestBody
         );
@@ -150,7 +149,7 @@ contract PrepareResolveRequest is WeatherIdScriptBase {
 }
 
 // STEP 2: Submit the request to the FDC and save the round ID.
-//      forge script script/WeatherId.s.sol:SubmitResolveRequest --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY
+//      forge script script/WeatherId.s.sol:SubmitResolveRequest --rpc-url $COSTON2_RPC_URL --broadcast
 contract SubmitResolveRequest is WeatherIdScriptBase {
     function run() external {
         console.log("--- Step 2: Submitting resolve request to FDC ---");
@@ -168,7 +167,7 @@ contract SubmitResolveRequest is WeatherIdScriptBase {
 }
 
 // STEP 3: Wait for finalization, retrieve the proof, and resolve the policy.
-//      forge script script/WeatherId.s.sol:ExecuteResolve --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+//      forge script script/WeatherId.s.sol:ExecuteResolve --rpc-url $COSTON2_RPC_URL --broadcast --ffi --sig "run(uint256)" <POLICY_ID>
 contract ExecuteResolve is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         console.log("--- Step 3: Executing resolution for policy", policyId, "---");
@@ -200,7 +199,7 @@ contract ExecuteResolve is WeatherIdScriptBase {
     }
 }
 
-//      forge script script/WeatherId.s.sol:ExpirePolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+//      forge script script/WeatherId.s.sol:ExpirePolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract ExpirePolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -212,7 +211,7 @@ contract ExpirePolicy is WeatherIdScriptBase {
     }
 }
 
-//      forge script script/WeatherId.s.sol:RetireUnclaimedPolicy --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+//      forge script script/WeatherId.s.sol:RetireUnclaimedPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract RetireUnclaimedPolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

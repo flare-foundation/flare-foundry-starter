@@ -17,14 +17,14 @@ import {IIAddressUpdatable} from "../src/crossChainFdc/IIAddressUpdatable.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 
 // --- Configuration ---
-string constant ATTESTATION_TYPE_NAME = "Web2Json";
+string constant attestationTypeName = "Web2Json";
 string constant dirPath = "data/crossChainFdc/";
 
 using stdJson for string;
 
 // Deploys all persistent contracts for the example and saves their addresses to individual .txt files.
 // Run this script once to set up the on-chain infrastructure.
-//      forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY -vvvv
+//      forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url $COSTON2_RPC_URL --broadcast
 contract DeployInfrastructure is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -76,7 +76,7 @@ contract DeployInfrastructure is Script {
 
 // STEP 1: Prepares the FDC request by calling the verifier API.
 //    *** RUN THIS SCRIPT ON A FLARE NETWORK (e.g., Coston2) ***
-//      forge script script/CrossChainFdc.s.sol:PrepareRequest --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY
+//      forge script script/CrossChainFdc.s.sol:PrepareRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 contract PrepareRequest is Script {
     using Surl for *;
     string public constant SOURCE_NAME = "PublicWeb2";
@@ -85,7 +85,7 @@ contract PrepareRequest is Script {
         console.log("--- Step 1: Preparing FDC request ---");
         vm.createDir(dirPath, true);
 
-        string memory attestationType = FdcBase.toUtf8HexString(ATTESTATION_TYPE_NAME);
+        string memory attestationType = FdcBase.toUtf8HexString(attestationTypeName);
         string memory sourceId = FdcBase.toUtf8HexString(SOURCE_NAME);
 
         string memory apiUrl = "https://swapi.info/api/people/3"; // C-3PO
@@ -96,7 +96,7 @@ contract PrepareRequest is Script {
         (string[] memory headers, string memory body) = FdcBase.prepareAttestationRequest(attestationType, sourceId, requestBody);
 
         string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
-        string memory url = string.concat(baseUrl, ATTESTATION_TYPE_NAME, "/prepareRequest");
+        string memory url = string.concat(baseUrl, attestationTypeName, "/prepareRequest");
         
         (, bytes memory data) = url.post(headers, body);
         FdcBase.AttestationResponse memory response = FdcBase.parseAttestationRequest(data);
@@ -108,7 +108,7 @@ contract PrepareRequest is Script {
 
 // STEP 2: Submits the prepared request to the FDC Hub on Flare.
 //    *** RUN THIS SCRIPT ON A FLARE NETWORK (e.g., Coston2) ***
-//      forge script script/CrossChainFdc.s.sol:SubmitRequest --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY
+//      forge script script/CrossChainFdc.s.sol:SubmitRequest --rpc-url $COSTON2_RPC_URL --broadcast
 contract SubmitRequest is Script {
     function run() external {
         console.log("--- Step 2: Submitting FDC request ---");
@@ -125,8 +125,8 @@ contract SubmitRequest is Script {
 
 // STEP 3: Waits, retrieves proof, and delivers it to the consumer contract.
 //    *** RUN THIS SCRIPT ON THE TARGET CHAIN (e.g., Coston2) ***
-//      forge script script/CrossChainFdc.s.sol:ExecuteProofDelivery --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY
-contract ExecuteProofDelivery is Script {
+//      forge script script/CrossChainFdc.s.sol:InteractWithContract --rpc-url $COSTON2_RPC_URL --broadcast --ffi
+contract InteractWithContract is Script {
     function run() external {
         console.log("--- Step 3: Executing proof delivery ---");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

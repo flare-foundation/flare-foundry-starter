@@ -21,8 +21,8 @@ using stdJson for string;
 string constant dirPath = "data/proofOfReserves/";
 
 // Deploys contracts and writes addresses to chain-specific .txt files.
-//      forge script script/ProofOfReserves.s.sol:Deploy --rpc-url coston --broadcast
-//      forge script script/ProofOfReserves.s.sol:Deploy --rpc-url coston2 --broadcast
+//      forge script script/ProofOfReserves.s.sol:Deploy --rpc-url $COSTON_RPC_URL --broadcast
+//      forge script script/ProofOfReserves.s.sol:Deploy --rpc-url $COSTON2_RPC_URL --broadcast
 contract Deploy is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -59,8 +59,8 @@ contract Deploy is Script {
 }
 
 // Creates transactions and writes the txHash to a chain-specific .txt file.
-//      forge script script/ProofOfReserves.s.sol:ActivateReaders --rpc-url coston --broadcast
-//      forge script script/ProofOfReserves.s.sol:ActivateReaders --rpc-url coston2 --broadcast
+//      forge script script/ProofOfReserves.s.sol:ActivateReaders --rpc-url $COSTON_RPC_URL --broadcast
+//      forge script script/ProofOfReserves.s.sol:ActivateReaders --rpc-url $COSTON2_RPC_URL --broadcast
 contract ActivateReaders is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -95,7 +95,7 @@ contract ActivateReaders is Script {
 }
 
 // Prepares requests by reading from chain-specific .txt files.
-//      forge script script/ProofOfReserves.s.sol:PrepareRequests --rpc-url coston2 --ffi
+//      forge script script/ProofOfReserves.s.sol:PrepareRequests --rpc-url $COSTON_RPC_URL --ffi
 contract PrepareRequests is Script {
     function run() external {
         vm.createDir(dirPath, true);
@@ -135,7 +135,7 @@ contract PrepareRequests is Script {
 }
 
 // Step 2: Submit requests and save the voting round IDs.
-//      forge script script/ProofOfReserves.s.sol:SubmitRequests --rpc-url coston2 --broadcast
+//      forge script script/ProofOfReserves.s.sol:SubmitRequests --rpc-url $COSTON_RPC_URL --broadcast
 contract SubmitRequests is Script {
     function run() external {
         _submitRequest("Web2Json");
@@ -155,7 +155,7 @@ contract SubmitRequests is Script {
 }
 
 // Step 3: Retrieve proofs and save them to files.
-//      forge script script/ProofOfReserves.s.sol:RetrieveProofs --rpc-url coston2 --ffi
+//      forge script script/ProofOfReserves.s.sol:RetrieveProofs --rpc-url $COSTON_RPC_URL --ffi
 contract RetrieveProofs is Script {
     function run() external {
         bytes memory web2JsonRequest = vm.parseBytes(vm.readFile(string.concat(dirPath, "_Web2Json_request.txt")));
@@ -197,7 +197,7 @@ contract RetrieveProofs is Script {
 }
 
 // Step 4: Read proofs from files and call the verification contract.
-//      forge script script/ProofOfReserves.s.sol:VerifyReserves --rpc-url coston2 --broadcast
+//      forge script script/ProofOfReserves.s.sol:VerifyReserves --rpc-url $COSTON_RPC_URL --broadcast
 contract VerifyReserves is Script {
     function run() external {
         IWeb2Json.Proof memory web2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(dirPath, "_Web2Json_proof.txt"))), (IWeb2Json.Proof));
