@@ -16,6 +16,8 @@ uint8 constant FDC_PROTOCOL_ID = 200;
 //      forge script script/WeatherId.s.sol:DeployAgency --rpc-url coston2 --broadcast --verify --verifier blockscout --verifier-url https://coston2-explorer.flare.network/api/ --private-key $PRIVATE_KEY
 contract DeployAgency is Script {
     function run() external {
+        vm.createDir(FDC_DATA_DIR_WEATHER_ID, true);
+
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         WeatherIdAgency agency = new WeatherIdAgency();
@@ -110,47 +112,27 @@ contract ClaimPolicy is WeatherIdScriptBase {
     }
 }
 
-//      forge script script/WeatherId.s.sol:ResolvePolicy --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID> --no-cache
-contract ResolvePolicy is WeatherIdScriptBase {
+// STEP 1: Prepare the FDC request and save it to a file.
+//      forge script script/WeatherId.s.sol:PrepareResolveRequest --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+contract PrepareResolveRequest is WeatherIdScriptBase {
     function run(uint256 policyId) external {
-        console.log("--- Starting ResolvePolicy script on Chain ID:", block.chainid, "---");
-        require(block.chainid == 114, "This script must be run on Coston2.");
-
+        console.log("--- Step 1: Preparing resolve request for policy", policyId, "---");
+        
         WeatherIdAgency agency = _getAgency();
         WeatherIdAgency.Policy memory policy = agency.getPolicy(policyId);
         
         bytes memory abiEncodedRequest = _prepareFdcRequest(policy.latitude, policy.longitude);
         
-        uint256 submissionTimestamp = FdcBase.submitAttestationRequest(abiEncodedRequest);
-        uint256 submissionRoundId = FdcBase.calculateRoundId(submissionTimestamp);
+        FdcBase.writeToFile(FDC_DATA_DIR_WEATHER_ID, "resolve_request.txt", StringsBase.toHexString(abiEncodedRequest), true);
         
-        // Retrieve proof and resolve the policy in one flow
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(
-            FDC_PROTOCOL_ID,
-            StringsBase.toHexString(abiEncodedRequest),
-            submissionRoundId
-        );
-        _resolvePolicyWithProof(agency, policyId, proofData);
-    }
-    
-    function _resolvePolicyWithProof(WeatherIdAgency agency, uint256 policyId, bytes memory proofData) private {
-        FdcBase.ParsableProof memory parsableProof = abi.decode(proofData, (FdcBase.ParsableProof));
-        IWeb2Json.Response memory proofResponse = abi.decode(parsableProof.responseHex, (IWeb2Json.Response));
-        IWeb2Json.Proof memory finalProof = IWeb2Json.Proof(parsableProof.proofs, proofResponse);
-
-        uint256 privateKey = vm.envUint("PRIVATE_KEY");
-        
-        vm.startBroadcast(privateKey);
-        agency.resolvePolicy(policyId, finalProof);
-        vm.stopBroadcast();
-
-        console.log("ResolvePolicy transaction sent for policy", policyId);
+        console.log("Successfully prepared attestation request and saved to resolve_request.txt");
     }
 
     function _prepareFdcRequest(int256 lat, int256 lon) private returns (bytes memory) {
         string memory requestBody = _prepareApiRequestBody(lat, lon);
         string memory url = string.concat(vm.envString("WEB2JSON_VERIFIER_URL_TESTNET"), "Web2Json/prepareRequest");
         
+        // *** FIX: The 'body' variable should be 'string memory', not 'string[] memory'. ***
         (string[] memory headers, string memory body) = FdcBase.prepareAttestationRequest(
             FdcBase.toUtf8HexString("Web2Json"), 
             FdcBase.toUtf8HexString("PublicWeb2"), 
@@ -176,6 +158,57 @@ contract ResolvePolicy is WeatherIdScriptBase {
         string memory abiSignature = '{\\"components\\":[{\\"internalType\\":\\"int256\\",\\"name\\":\\"latitude\\",\\"type\\":\\"int256\\\"},{\\"internalType\\":\\"int256\\",\\"name\\":\\"longitude\\",\\"type\\":\\"int256\\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"weatherId\\",\\"type\\":\\"uint256\\\"},{\\"internalType\\":\\"string\\",\\"name\\":\\"weatherMain\\",\\"type\\":\\"string\\\"},{\\"internalType\\":\\"string\\",\\"name\\":\\"description\\",\\"type\\":\\"string\\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"temperature\\",\\"type\\":\\"uint256\\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"windSpeed\\",\\"type\\":\\"uint256\\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"windDeg\\",\\"type\\":\\"uint256\\\"}],\\"name\\":\\"dto\\",\\"type\\":\\"tuple\\"}';
 
         return string.concat('{"url":"https://api.openweathermap.org/data/2.5/weather","httpMethod":"GET","headers":"{}","queryParams":"',queryParams,'","body":"{}","postProcessJq":"',postProcessJq,'","abiSignature":"',abiSignature,'"}');
+    }
+}
+
+// STEP 2: Submit the request to the FDC and save the round ID.
+//      forge script script/WeatherId.s.sol:SubmitResolveRequest --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY
+contract SubmitResolveRequest is WeatherIdScriptBase {
+    function run() external {
+        console.log("--- Step 2: Submitting resolve request to FDC ---");
+        
+        string memory requestHex = vm.readFile(string.concat(FDC_DATA_DIR_WEATHER_ID, "resolve_request.txt"));
+        bytes memory abiEncodedRequest = vm.parseBytes(requestHex);
+
+        uint256 submissionTimestamp = FdcBase.submitAttestationRequest(abiEncodedRequest);
+        uint256 submissionRoundId = FdcBase.calculateRoundId(submissionTimestamp);
+        
+        // Save the round ID to a file for the final step
+        FdcBase.writeToFile(FDC_DATA_DIR_WEATHER_ID, "resolve_roundId.txt", Strings.toString(submissionRoundId), true);
+        
+        console.log("Request submitted successfully in Voting Round ID:", submissionRoundId);
+    }
+}
+
+// STEP 3: Wait for finalization, retrieve the proof, and resolve the policy.
+//      forge script script/WeatherId.s.sol:ExecuteResolve --rpc-url coston2 --broadcast --ffi --private-key $PRIVATE_KEY --sig "run(uint256)" <POLICY_ID>
+contract ExecuteResolve is WeatherIdScriptBase {
+    function run(uint256 policyId) external {
+        console.log("--- Step 3: Executing resolution for policy", policyId, "---");
+        
+        string memory requestHex = vm.readFile(string.concat(FDC_DATA_DIR_WEATHER_ID, "resolve_request.txt"));
+        string memory roundIdStr = vm.readFile(string.concat(FDC_DATA_DIR_WEATHER_ID, "resolve_roundId.txt"));
+        uint256 submissionRoundId = FdcBase.stringToUint(roundIdStr);
+
+        // This is the long-running part that waits and polls
+        bytes memory proofData = FdcBase.retrieveProofWithPolling(
+            FDC_PROTOCOL_ID,
+            requestHex,
+            submissionRoundId
+        );
+
+        // Now broadcast the final transaction
+        WeatherIdAgency agency = _getAgency();
+        FdcBase.ParsableProof memory parsableProof = abi.decode(proofData, (FdcBase.ParsableProof));
+        IWeb2Json.Response memory proofResponse = abi.decode(parsableProof.responseHex, (IWeb2Json.Response));
+        IWeb2Json.Proof memory finalProof = IWeb2Json.Proof(parsableProof.proofs, proofResponse);
+
+        uint256 privateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(privateKey);
+        agency.resolvePolicy(policyId, finalProof);
+        vm.stopBroadcast();
+
+        console.log("ResolvePolicy transaction sent successfully for policy", policyId);
     }
 }
 
