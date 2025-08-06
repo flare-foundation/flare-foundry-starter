@@ -15,7 +15,7 @@ import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol
 string constant FDC_DATA_DIR = "data/weatherInsurance/";
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
 
-//      forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify -vvvv
+//      forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify
 contract DeployAgency is Script {
     function run() external {
         vm.createDir(FDC_DATA_DIR, true);

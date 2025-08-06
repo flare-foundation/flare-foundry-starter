@@ -4,13 +4,13 @@ pragma solidity ^0.8.25;
 import {Script, console} from "forge-std/Script.sol";
 import {Surl} from "surl/Surl.sol";
 import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
-import {Base as StringsBase} from "../../src/utils/fdcStrings/Base.sol";
+import {Base as StringsBase} from "../src/utils/fdcStrings/Base.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
-import {MyStablecoin} from "../../src/proofOfReserves/Token.sol";
-import {TokenStateReader} from "../../src/proofOfReserves/TokenStateReader.sol";
-import {ProofOfReserves} from "../../src/proofOfReserves/ProofOfReserves.sol";
+import {MyStablecoin} from "../src/proofOfReserves/Token.sol";
+import {TokenStateReader} from "../src/proofOfReserves/TokenStateReader.sol";
+import {ProofOfReserves} from "../src/proofOfReserves/ProofOfReserves.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 
 // stdjson

@@ -5,10 +5,10 @@ import {Script, console} from "forge-std/Script.sol";
 import {Surl} from "surl/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
-import {Base as StringsBase} from "../../src/utils/fdcStrings/Base.sol";
+import {Base as StringsBase} from "../src/utils/fdcStrings/Base.sol";
 import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
-import {NFTMinter, TokenTransfer} from "../../src/crossChainPayment/Minter.sol";
-import {MyNFT} from "../../src/crossChainPayment/NFT.sol";
+import {NFTMinter, TokenTransfer} from "../src/crossChainPayment/Minter.sol";
+import {MyNFT} from "../src/crossChainPayment/NFT.sol";
 
 // --- Base contract for shared configuration and utilities ---
 contract CrossChainPaymentBase is Script {
