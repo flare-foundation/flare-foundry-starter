@@ -22,8 +22,8 @@ string constant dirPath = "data/crossChainFdc/";
 
 using stdJson for string;
 
-// Deploys all persistent contracts for the example and saves their addresses to individual .txt files.
-// Run this script once to set up the on-chain infrastructure.
+// Deploys the persistent CORE INFRASTRUCTURE contracts.
+// Run this script only once per network.
 //      forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url $COSTON2_RPC_URL --broadcast
 contract DeployInfrastructure is Script {
     function run() external {
@@ -41,7 +41,7 @@ contract DeployInfrastructure is Script {
         
         string[] memory names = new string[](2);
         address[] memory addresses = new address[](2);
-
+        
         names[0] = "Relay";
         addresses[0] = relayAddress;
 
@@ -54,14 +54,11 @@ contract DeployInfrastructure is Script {
         contractsToUpdate[0] = fdcVerification;
         addressUpdater.updateContractAddresses(contractsToUpdate);
 
-        StarWarsCharacterListV3 characterList = new StarWarsCharacterListV3(address(fdcVerification));
-
         vm.stopBroadcast();
 
         vm.createDir(dirPath, true);
         vm.writeFile(string.concat(dirPath, "_addressUpdater.txt"), vm.toString(address(addressUpdater)));
         vm.writeFile(string.concat(dirPath, "_fdcVerification.txt"), vm.toString(address(fdcVerification)));
-        vm.writeFile(string.concat(dirPath, "_starWarsCharacterList.txt"), vm.toString(address(characterList)));
         vm.writeFile(string.concat(dirPath, "_relayAddress.txt"), vm.toString(relayAddress));
 
         console.log("\n--- Infrastructure Deployment Complete ---");
@@ -69,8 +66,32 @@ contract DeployInfrastructure is Script {
         console.log("\n--- Contract Addresses ---");
         console.log("AddressUpdater:        ", address(addressUpdater));
         console.log("FdcVerification:       ", address(fdcVerification));
-        console.log("StarWarsCharacterList: ", address(characterList));
         console.log("Relay (dynamic):       ", relayAddress);
+    }
+}
+
+// Run this script after deploying the infrastructure, or any time you update the consumer contract.
+//      forge script script/CrossChainFdc.s.sol:DeployConsumer --rpc-url $COSTON2_RPC_URL --broadcast
+contract DeployConsumer is Script {
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+
+        // Read the FdcVerification address from the file created by the infrastructure deployment
+        string memory fdcVerificationPath = string.concat(dirPath, "_fdcVerification.txt");
+        require(vm.exists(fdcVerificationPath), "Infrastructure not deployed. Run DeployInfrastructure first.");
+        address fdcVerificationAddress = vm.parseAddress(vm.readFile(fdcVerificationPath));
+
+        vm.startBroadcast(deployerPrivateKey);
+        StarWarsCharacterListV3 characterList = new StarWarsCharacterListV3(fdcVerificationAddress);
+        vm.stopBroadcast();
+
+        // Write the new consumer contract's address to its own file
+        string memory consumerPath = string.concat(dirPath, "_starWarsCharacterList.txt");
+        vm.writeFile(consumerPath, vm.toString(address(characterList)));
+
+        console.log("\n--- Consumer Contract Deployment Complete ---");
+        console.log("StarWarsCharacterList deployed to:", address(characterList));
+        console.log("Configuration saved to:", consumerPath);
     }
 }
 
@@ -140,10 +161,7 @@ contract InteractWithContract is Script {
         string memory requestHex = vm.readFile(string.concat(dirPath, "_abiEncodedRequest.txt"));
         uint256 votingRoundId = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_votingRoundId.txt")));
         
-        address fdcVerificationAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_fdcVerification.txt")));
-        require(fdcVerificationAddress != address(0), "FdcVerification address not found in config.");
-
-        FdcVerification fdcVerification = FdcVerification(fdcVerificationAddress);
+        IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
         uint8 protocolId = fdcVerification.fdcProtocolId();
         
         bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, requestHex, votingRoundId);
