@@ -9,8 +9,10 @@ import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {WeatherIdAgency} from "../../src/weatherInsurance/WeatherIdAgency.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 import {IRelay} from "flare-periphery/src/coston2/IRelay.sol";
+import {IFdcHub} from "flare-periphery/src/coston2/IFdcHub.sol";
 
 string constant FDC_DATA_DIR_WEATHER_ID = "data/weatherInsurance/weatherId/";
+// pull the fdc contract through the contract registry
 uint8 constant FDC_PROTOCOL_ID = 200;
 
 //      forge script script/WeatherId.s.sol:DeployAgency --rpc-url coston2 --broadcast --verify --verifier blockscout --verifier-url https://coston2-explorer.flare.network/api/ --private-key $PRIVATE_KEY

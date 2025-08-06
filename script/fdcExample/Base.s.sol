@@ -15,8 +15,6 @@ import {IFdcRequestFeeConfigurations} from "flare-periphery/src/coston2/IFdcRequ
 import {IRelay} from "flare-periphery/src/coston2/IRelay.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 
-// using stdJson for string;
-
 address constant VM_ADDRESS = address(
     uint160(uint256(keccak256("hevm cheat code")))
 );

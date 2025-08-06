@@ -41,23 +41,28 @@ contract DeployCrossChainPayment is CrossChainPaymentBase {
         nftAddr = address(nft);
         minterAddr = address(minter);
 
+        // --- FIX START ---
+        // Instead of using multiple .serialize() calls, we will manually construct the
+        // simple, flat JSON string. This guarantees the correct format.
         vm.createDir(FDC_DATA_DIR, true);
         string memory configPath = string.concat(FDC_DATA_DIR, CONFIG_FILE);
-        string memory json = "{}"; // Start with an empty JSON object
-        json = json.serialize(".nftAddress", nftAddr);
-        json = json.serialize(".minterAddress", minterAddr);
+        
+        string memory json = string.concat(
+            '{"nftAddress":"', vm.toString(nftAddr),
+            '","minterAddress":"', vm.toString(minterAddr),
+            '"}'
+        );
         vm.writeFile(configPath, json);
+        // --- FIX END ---
 
         console.log("MyNFT deployed to:", nftAddr);
         console.log("NFTMinter deployed to:", minterAddr);
         console.log("MINTER_ROLE configured successfully.");
         console.log("\nConfiguration saved to:", configPath);
-        console.log("NOTE: The Config.s.sol file is no longer needed and can be deleted.");
     }
 }
-
 // 1. Prepares the FDC request by calling the verifier API.
-//      forge script script/crossChainPayment.s.sol:PrepareAttestationRequest --rpc-url coston2 --broadcast -vvvv
+//      forge script script/crossChainPayment.s.sol:PrepareAttestationRequest --rpc-url coston2 --broadcast --ffi -vvvv
 contract PrepareAttestationRequest is CrossChainPaymentBase {
     using Surl for *;
 
@@ -106,7 +111,7 @@ contract SubmitAttestationRequest is CrossChainPaymentBase {
 }
 
 // 3. Retrieves the proof from the DA Layer after the round is finalized.
-//      forge script script/crossChainPayment.s.sol:RetrieveProof --rpc-url coston2 --broadcast -vvvv
+//      forge script script/crossChainPayment.s.sol:RetrieveProof --rpc-url coston2 --broadcast --ffi -vvvv
 contract RetrieveProof is CrossChainPaymentBase {
     using Surl for *;
     uint8 constant FDC_PROTOCOL_ID = 200;
@@ -128,7 +133,7 @@ contract RetrieveProof is CrossChainPaymentBase {
 }
 
 // 4. Sends the final proof to the NFTMinter contract to mint the NFT.
-//      forge script script/crossChainPayment.s.sol:MintNFT --rpc-url coston2 --broadcast -vvvv
+//      forge script script/crossChainPayment.s.sol:MintNFT --rpc-url coston2 --broadcast --ffi -vvvv
 contract MintNFT is CrossChainPaymentBase {
     function run() external {
         string memory configPath = string.concat(FDC_DATA_DIR, CONFIG_FILE);
