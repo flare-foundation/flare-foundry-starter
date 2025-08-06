@@ -7,6 +7,8 @@ import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
 import {Base as StringsBase} from "../src/utils/fdcStrings/Base.sol";
 import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
+import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
+import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 import {NFTMinter, TokenTransfer} from "../src/crossChainPayment/Minter.sol";
 import {MyNFT} from "../src/crossChainPayment/NFT.sol";
 
@@ -103,14 +105,15 @@ contract SubmitAttestationRequest is CrossChainPaymentBase {
 // 3. Retrieves the proof from the DA Layer after the round is finalized.
 //      forge script script/crossChainPayment.s.sol:RetrieveProof --rpc-url coston2 --broadcast --ffi
 contract RetrieveProof is CrossChainPaymentBase {
-    uint8 constant FDC_PROTOCOL_ID = 200;
-
     function run() external {
         string memory requestHex = vm.readFile(string.concat(dirPath, ATTESTATION_TYPE_NAME, "_abiEncodedRequest.txt"));
         string memory votingRoundIdStr = vm.readFile(string.concat(dirPath, ATTESTATION_TYPE_NAME, "_votingRoundId.txt"));
         uint256 votingRoundId = FdcBase.stringToUint(votingRoundIdStr);
+
+        IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
+        uint8 protocolId = fdcVerification.fdcProtocolId();
         
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(FDC_PROTOCOL_ID, requestHex, votingRoundId);
+        bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, requestHex, votingRoundId);
 
         FdcBase.ParsableProof memory proof = abi.decode(proofData, (FdcBase.ParsableProof));
         IEVMTransaction.Response memory proofResponse = abi.decode(proof.responseHex, (IEVMTransaction.Response));
@@ -120,7 +123,6 @@ contract RetrieveProof is CrossChainPaymentBase {
         console.log("Successfully retrieved proof and saved to file.");
     }
 }
-
 // 4. Sends the final proof to the NFTMinter contract to mint the NFT.
 //      forge script script/crossChainPayment.s.sol:MintNFT --rpc-url coston2 --broadcast --ffi
 contract MintNFT is CrossChainPaymentBase {

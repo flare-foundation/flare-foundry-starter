@@ -11,6 +11,8 @@ import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
 import {MyStablecoin} from "../src/proofOfReserves/Token.sol";
 import {TokenStateReader} from "../src/proofOfReserves/TokenStateReader.sol";
 import {ProofOfReserves} from "../src/proofOfReserves/ProofOfReserves.sol";
+import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
+import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 
 // stdjson
@@ -155,8 +157,6 @@ contract SubmitRequests is Script {
 // Step 3: Retrieve proofs and save them to files.
 //      forge script script/ProofOfReserves.s.sol:RetrieveProofs --rpc-url coston2 --ffi
 contract RetrieveProofs is Script {
-    uint8 constant FDC_PROTOCOL_ID = 200;
-
     function run() external {
         bytes memory web2JsonRequest = vm.parseBytes(vm.readFile(string.concat(dirPath, "_Web2Json_request.txt")));
         uint256 roundIdWeb2 = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_Web2Json_roundId.txt")));
@@ -178,14 +178,18 @@ contract RetrieveProofs is Script {
     }
 
     function retrieveWeb2JsonProof(bytes memory req, uint256 roundId) internal returns (IWeb2Json.Proof memory) {
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(FDC_PROTOCOL_ID, StringsBase.toHexString(req), roundId);
+        IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
+        uint8 protocolId = fdcVerification.fdcProtocolId();
+        bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, StringsBase.toHexString(req), roundId);
         FdcBase.ParsableProof memory p = abi.decode(proofData, (FdcBase.ParsableProof));
         IWeb2Json.Response memory r = abi.decode(p.responseHex, (IWeb2Json.Response));
         return IWeb2Json.Proof(p.proofs, r);
     }
 
     function retrieveEvmProof(bytes memory req, uint256 roundId) internal returns (IEVMTransaction.Proof memory) {
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(FDC_PROTOCOL_ID, StringsBase.toHexString(req), roundId);
+        IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
+        uint8 protocolId = fdcVerification.fdcProtocolId();
+        bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, StringsBase.toHexString(req), roundId);
         FdcBase.ParsableProof memory p = abi.decode(proofData, (FdcBase.ParsableProof));
         IEVMTransaction.Response memory r = abi.decode(p.responseHex, (IEVMTransaction.Response));
         return IEVMTransaction.Proof(p.proofs, r);

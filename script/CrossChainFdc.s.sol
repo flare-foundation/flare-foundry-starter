@@ -19,7 +19,6 @@ import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol
 // --- Configuration ---
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
 string constant dirPath = "data/crossChainFdc/";
-uint8 constant FDC_PROTOCOL_ID = 200;
 
 using stdJson for string;
 
