@@ -18,7 +18,7 @@ import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol
 
 // --- Configuration ---
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
-string constant FDC_DATA_DIR = "data/crossChainFdc/";
+string constant dirPath = "data/crossChainFdc/";
 uint8 constant FDC_PROTOCOL_ID = 200;
 
 using stdJson for string;
@@ -59,14 +59,14 @@ contract DeployInfrastructure is Script {
 
         vm.stopBroadcast();
 
-        vm.createDir(FDC_DATA_DIR, true);
-        vm.writeFile(string.concat(FDC_DATA_DIR, "addressUpdater.txt"), vm.toString(address(addressUpdater)));
-        vm.writeFile(string.concat(FDC_DATA_DIR, "fdcVerification.txt"), vm.toString(address(fdcVerification)));
-        vm.writeFile(string.concat(FDC_DATA_DIR, "starWarsCharacterList.txt"), vm.toString(address(characterList)));
-        vm.writeFile(string.concat(FDC_DATA_DIR, "relayAddress.txt"), vm.toString(relayAddress));
+        vm.createDir(dirPath, true);
+        vm.writeFile(string.concat(dirPath, "_addressUpdater.txt"), vm.toString(address(addressUpdater)));
+        vm.writeFile(string.concat(dirPath, "_fdcVerification.txt"), vm.toString(address(fdcVerification)));
+        vm.writeFile(string.concat(dirPath, "_starWarsCharacterList.txt"), vm.toString(address(characterList)));
+        vm.writeFile(string.concat(dirPath, "_relayAddress.txt"), vm.toString(relayAddress));
 
         console.log("\n--- Infrastructure Deployment Complete ---");
-        console.log("Configuration saved to .txt files in:", FDC_DATA_DIR);
+        console.log("Configuration saved to .txt files in:", dirPath);
         console.log("\n--- Contract Addresses ---");
         console.log("AddressUpdater:        ", address(addressUpdater));
         console.log("FdcVerification:       ", address(fdcVerification));
@@ -84,7 +84,7 @@ contract PrepareRequest is Script {
 
     function run() external {
         console.log("--- Step 1: Preparing FDC request ---");
-        vm.createDir(FDC_DATA_DIR, true);
+        vm.createDir(dirPath, true);
 
         string memory attestationType = FdcBase.toUtf8HexString(ATTESTATION_TYPE_NAME);
         string memory sourceId = FdcBase.toUtf8HexString(SOURCE_NAME);
@@ -102,7 +102,7 @@ contract PrepareRequest is Script {
         (, bytes memory data) = url.post(headers, body);
         FdcBase.AttestationResponse memory response = FdcBase.parseAttestationRequest(data);
         
-        FdcBase.writeToFile(FDC_DATA_DIR, "abiEncodedRequest.txt", StringsBase.toHexString(response.abiEncodedRequest), true);
+        FdcBase.writeToFile(dirPath, "_abiEncodedRequest.txt", StringsBase.toHexString(response.abiEncodedRequest), true);
         console.log("Successfully prepared attestation request and saved to abiEncodedRequest.txt");
     }
 }
@@ -113,13 +113,13 @@ contract PrepareRequest is Script {
 contract SubmitRequest is Script {
     function run() external {
         console.log("--- Step 2: Submitting FDC request ---");
-        string memory requestHex = vm.readFile(string.concat(FDC_DATA_DIR, "abiEncodedRequest.txt"));
+        string memory requestHex = vm.readFile(string.concat(dirPath, "_abiEncodedRequest.txt"));
         bytes memory request = vm.parseBytes(requestHex);
 
         uint256 timestamp = FdcBase.submitAttestationRequest(request);
         uint256 votingRoundId = FdcBase.calculateRoundId(timestamp);
 
-        FdcBase.writeToFile(FDC_DATA_DIR, "votingRoundId.txt", Strings.toString(votingRoundId), true);
+        FdcBase.writeToFile(dirPath, "_votingRoundId.txt", Strings.toString(votingRoundId), true);
         console.log("Successfully submitted request. Voting Round ID:", votingRoundId);
     }
 }
@@ -132,16 +132,16 @@ contract ExecuteProofDelivery is Script {
         console.log("--- Step 3: Executing proof delivery ---");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        address characterListAddress = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR, "starWarsCharacterList.txt")));
+        address characterListAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_starWarsCharacterList.txt")));
         require(characterListAddress != address(0), "starWarsCharacterList address missing from config.");
 
         StarWarsCharacterListV3 characterList = StarWarsCharacterListV3(characterListAddress);
         console.log("Using StarWarsCharacterListV3 consumer at:", address(characterList));
 
-        string memory requestHex = vm.readFile(string.concat(FDC_DATA_DIR, "abiEncodedRequest.txt"));
-        uint256 votingRoundId = FdcBase.stringToUint(vm.readFile(string.concat(FDC_DATA_DIR, "votingRoundId.txt")));
+        string memory requestHex = vm.readFile(string.concat(dirPath, "_abiEncodedRequest.txt"));
+        uint256 votingRoundId = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_votingRoundId.txt")));
         
-        address fdcVerificationAddress = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR, "fdcVerification.txt")));
+        address fdcVerificationAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_fdcVerification.txt")));
         require(fdcVerificationAddress != address(0), "FdcVerification address not found in config.");
 
         FdcVerification fdcVerification = FdcVerification(fdcVerificationAddress);

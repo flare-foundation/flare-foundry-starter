@@ -16,7 +16,7 @@ import {stdJson} from "forge-std/StdJson.sol";
 // stdjson
 using stdJson for string;
 
-string constant FDC_DATA_DIR_POR = "data/proofOfReserves/";
+string constant dirPath = "data/proofOfReserves/";
 
 // Deploys contracts and writes addresses to chain-specific .txt files.
 //      forge script script/ProofOfReserves.s.sol:Deploy --rpc-url coston --broadcast
@@ -27,22 +27,22 @@ contract Deploy is Script {
         address owner = vm.addr(deployerPrivateKey);
         uint256 chainId = block.chainid;
 
-        vm.createDir(FDC_DATA_DIR_POR, true);
+        vm.createDir(dirPath, true);
 
         vm.startBroadcast(deployerPrivateKey);
 
         MyStablecoin token = new MyStablecoin(owner, owner);
         TokenStateReader reader = new TokenStateReader();
 
-        string memory tokenPath = string.concat(FDC_DATA_DIR_POR, "token-", Strings.toString(chainId), ".txt");
-        string memory readerPath = string.concat(FDC_DATA_DIR_POR, "reader-", Strings.toString(chainId), ".txt");
+        string memory tokenPath = string.concat(dirPath, "_token", Strings.toString(chainId), ".txt");
+        string memory readerPath = string.concat(dirPath, "_reader", Strings.toString(chainId), ".txt");
         
         vm.writeFile(tokenPath, vm.toString(address(token)));
         vm.writeFile(readerPath, vm.toString(address(reader)));
 
         if (chainId == 114) { // Coston2
             ProofOfReserves proofOfReserves = new ProofOfReserves();
-            string memory porPath = string.concat(FDC_DATA_DIR_POR, "proofOfReserves-", Strings.toString(chainId), ".txt");
+            string memory porPath = string.concat(dirPath, "_proofOfReserves", Strings.toString(chainId), ".txt");
             vm.writeFile(porPath, vm.toString(address(proofOfReserves)));
             console.log("ProofOfReserves deployed to:", address(proofOfReserves));
         }
@@ -52,7 +52,7 @@ contract Deploy is Script {
         console.log("--- Deployment Results for Chain ID:", chainId, "---");
         console.log("MyStablecoin deployed to:", address(token));
         console.log("TokenStateReader deployed to:", address(reader));
-        console.log("Configuration saved to .txt files in:", FDC_DATA_DIR_POR);
+        console.log("Configuration saved to .txt files in:", dirPath);
     }
 }
 
@@ -65,8 +65,8 @@ contract ActivateReaders is Script {
         uint256 chainId = block.chainid;
         
         // Read addresses from .txt files
-        string memory tokenPath = string.concat(FDC_DATA_DIR_POR, "token-", Strings.toString(chainId), ".txt");
-        string memory readerPath = string.concat(FDC_DATA_DIR_POR, "reader-", Strings.toString(chainId), ".txt");
+        string memory tokenPath = string.concat(dirPath, "_token", Strings.toString(chainId), ".txt");
+        string memory readerPath = string.concat(dirPath, "_reader", Strings.toString(chainId), ".txt");
 
         address tokenAddress = vm.parseAddress(vm.readFile(tokenPath));
         address readerAddress = vm.parseAddress(vm.readFile(readerPath));
@@ -84,7 +84,7 @@ contract ActivateReaders is Script {
         // We still need stdJson here just to parse the broadcast receipt, which is fine.
         string memory txHash = receiptJson.readString(".transactions[0].transactionHash");
         
-        string memory txHashPath = string.concat(FDC_DATA_DIR_POR, "txHash-", Strings.toString(chainId), ".txt");
+        string memory txHashPath = string.concat(dirPath, "_txHash", Strings.toString(chainId), ".txt");
         vm.writeFile(txHashPath, txHash);
 
         console.log("Reader activated for token:", address(token), "on chain:", chainId);
@@ -96,23 +96,23 @@ contract ActivateReaders is Script {
 //      forge script script/ProofOfReserves.s.sol:PrepareRequests --rpc-url coston2 --ffi
 contract PrepareRequests is Script {
     function run() external {
-        vm.createDir(FDC_DATA_DIR_POR, true);
+        vm.createDir(dirPath, true);
 
         // Read from both chain-specific config files
-        string memory txHashCoston = vm.readFile(string.concat(FDC_DATA_DIR_POR, "txHash-16.txt"));
-        string memory txHashCoston2 = vm.readFile(string.concat(FDC_DATA_DIR_POR, "txHash-114.txt"));
+        string memory txHashCoston = vm.readFile(string.concat(dirPath, "_txHash_16.txt"));
+        string memory txHashCoston2 = vm.readFile(string.concat(dirPath, "_txHash_114.txt"));
         require(bytes(txHashCoston).length > 0 && bytes(txHashCoston2).length > 0, "Transaction hashes not found in .txt configs. Run ActivateReaders on both chains first.");
 
         bytes memory web2JsonRequest = prepareWeb2JsonRequest();
-        FdcBase.writeToFile(FDC_DATA_DIR_POR, "Web2Json_request.txt", StringsBase.toHexString(web2JsonRequest), true);
+        FdcBase.writeToFile(dirPath, "_Web2Json_request.txt", StringsBase.toHexString(web2JsonRequest), true);
         console.log("Web2Json request prepared and saved.");
 
         bytes memory evmCostonRequest = prepareEvmTransactionRequest("testSGB", "sgb", txHashCoston);
-        FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston_request.txt", StringsBase.toHexString(evmCostonRequest), true);
+        FdcBase.writeToFile(dirPath, "EVMTransaction_Coston_request.txt", StringsBase.toHexString(evmCostonRequest), true);
         console.log("Coston EVM Tx request prepared and saved.");
 
         bytes memory evmCoston2Request = prepareEvmTransactionRequest("testFLR", "flr", txHashCoston2);
-        FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_request.txt", StringsBase.toHexString(evmCoston2Request), true);
+        FdcBase.writeToFile(dirPath, "EVMTransaction_Coston2_request.txt", StringsBase.toHexString(evmCoston2Request), true);
         console.log("Coston2 EVM Tx request prepared and saved.");
     }
 
@@ -143,11 +143,11 @@ contract SubmitRequests is Script {
 
     function _submitRequest(string memory attestationType) private {
         string memory requestFile = string.concat(attestationType, "_request.txt");
-        bytes memory request = vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, requestFile)));
+        bytes memory request = vm.parseBytes(vm.readFile(string.concat(dirPath, requestFile)));
         uint256 timestamp = FdcBase.submitAttestationRequest(request);
         uint256 roundId = FdcBase.calculateRoundId(timestamp);
         string memory roundIdFile = string.concat(attestationType, "_roundId.txt");
-        FdcBase.writeToFile(FDC_DATA_DIR_POR, roundIdFile, Strings.toString(roundId), true);
+        FdcBase.writeToFile(dirPath, roundIdFile, Strings.toString(roundId), true);
         console.log(string.concat(attestationType, " Request submitted in round: "), roundId);
     }
 }
@@ -158,22 +158,22 @@ contract RetrieveProofs is Script {
     uint8 constant FDC_PROTOCOL_ID = 200;
 
     function run() external {
-        bytes memory web2JsonRequest = vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "Web2Json_request.txt")));
-        uint256 roundIdWeb2 = FdcBase.stringToUint(vm.readFile(string.concat(FDC_DATA_DIR_POR, "Web2Json_roundId.txt")));
+        bytes memory web2JsonRequest = vm.parseBytes(vm.readFile(string.concat(dirPath, "_Web2Json_request.txt")));
+        uint256 roundIdWeb2 = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_Web2Json_roundId.txt")));
         IWeb2Json.Proof memory web2Proof = retrieveWeb2JsonProof(web2JsonRequest, roundIdWeb2);
-        FdcBase.writeToFile(FDC_DATA_DIR_POR, "Web2Json_proof.txt", StringsBase.toHexString(abi.encode(web2Proof)), true);
+        FdcBase.writeToFile(dirPath, "_Web2Json_proof.txt", StringsBase.toHexString(abi.encode(web2Proof)), true);
         console.log("Web2Json proof retrieved and saved.");
 
-        bytes memory evmCostonRequest = vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston_request.txt")));
-        uint256 roundIdCoston = FdcBase.stringToUint(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston_roundId.txt")));
+        bytes memory evmCostonRequest = vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_request.txt")));
+        uint256 roundIdCoston = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_roundId.txt")));
         IEVMTransaction.Proof memory evmCostonProof = retrieveEvmProof(evmCostonRequest, roundIdCoston);
-        FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston_proof.txt", StringsBase.toHexString(abi.encode(evmCostonProof)), true);
+        FdcBase.writeToFile(dirPath, "_EVMTransaction_Coston_proof.txt", StringsBase.toHexString(abi.encode(evmCostonProof)), true);
         console.log("Coston EVM proof retrieved and saved.");
 
-        bytes memory evmCoston2Request = vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_request.txt")));
-        uint256 roundIdCoston2 = FdcBase.stringToUint(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_roundId.txt")));
+        bytes memory evmCoston2Request = vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_request.txt")));
+        uint256 roundIdCoston2 = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_roundId.txt")));
         IEVMTransaction.Proof memory evmCoston2Proof = retrieveEvmProof(evmCoston2Request, roundIdCoston2);
-        FdcBase.writeToFile(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_proof.txt", StringsBase.toHexString(abi.encode(evmCoston2Proof)), true);
+        FdcBase.writeToFile(dirPath, "_EVMTransaction_Coston2_proof.txt", StringsBase.toHexString(abi.encode(evmCoston2Proof)), true);
         console.log("Coston2 EVM proof retrieved and saved.");
     }
 
@@ -196,15 +196,15 @@ contract RetrieveProofs is Script {
 //      forge script script/ProofOfReserves.s.sol:VerifyReserves --rpc-url coston2 --broadcast
 contract VerifyReserves is Script {
     function run() external {
-        IWeb2Json.Proof memory web2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "Web2Json_proof.txt"))), (IWeb2Json.Proof));
-        IEVMTransaction.Proof memory evmCostonProof = abi.decode(vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston_proof.txt"))), (IEVMTransaction.Proof));
-        IEVMTransaction.Proof memory evmCoston2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_proof.txt"))), (IEVMTransaction.Proof));
+        IWeb2Json.Proof memory web2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(dirPath, "_Web2Json_proof.txt"))), (IWeb2Json.Proof));
+        IEVMTransaction.Proof memory evmCostonProof = abi.decode(vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_proof.txt"))), (IEVMTransaction.Proof));
+        IEVMTransaction.Proof memory evmCoston2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_proof.txt"))), (IEVMTransaction.Proof));
         
-        address proofOfReservesAddress = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR_POR, "proofOfReserves-114.txt")));
-        address readerCostonAddress = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR_POR, "reader-16.txt")));
-        address tokenCostonAddress = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR_POR, "token-16.txt")));
-        address readerCoston2Address = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR_POR, "reader-114.txt")));
-        address tokenCoston2Address = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR_POR, "token-114.txt")));
+        address proofOfReservesAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_proofOfReserves-114.txt")));
+        address readerCostonAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_reader16.txt")));
+        address tokenCostonAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_token16.txt")));
+        address readerCoston2Address = vm.parseAddress(vm.readFile(string.concat(dirPath, "_reader114.txt")));
+        address tokenCoston2Address = vm.parseAddress(vm.readFile(string.concat(dirPath, "_token114.txt")));
         require(proofOfReservesAddress != address(0), "ProofOfReserves address not found in config.");
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

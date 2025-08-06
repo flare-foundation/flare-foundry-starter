@@ -11,20 +11,20 @@ import {WeatherIdAgency} from "../src/weatherInsurance/WeatherIdAgency.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 
-string constant FDC_DATA_DIR_WEATHER_ID = "data/weatherInsurance/weatherId/";
+string constant dirPath = "data/weatherInsurance/weatherId/";
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
 
 //      forge script script/WeatherId.s.sol:DeployAgency --rpc-url coston2 --broadcast --verify --verifier blockscout --verifier-url https://coston2-explorer.flare.network/api/ --private-key $PRIVATE_KEY
 contract DeployAgency is Script {
     function run() external {
-        vm.createDir(FDC_DATA_DIR_WEATHER_ID, true);
+        vm.createDir(dirPath, true);
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         WeatherIdAgency agency = new WeatherIdAgency();
         vm.stopBroadcast();
         
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "agencyAddress.txt");
+        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
         vm.writeFile(filePath, vm.toString(address(agency)));
         
         console.log("WeatherIdAgency deployed to:", address(agency));
@@ -34,7 +34,7 @@ contract DeployAgency is Script {
 
 contract WeatherIdScriptBase is Script {
     function _getAgency() internal returns (WeatherIdAgency) {
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "agencyAddress.txt");
+        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
         require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
         
         address agencyAddress = vm.parseAddress(vm.readFile(filePath));
@@ -112,9 +112,9 @@ contract PrepareResolveRequest is WeatherIdScriptBase {
         
         bytes memory abiEncodedRequest = _prepareFdcRequest(policy.latitude, policy.longitude);
         
-        FdcBase.writeToFile(FDC_DATA_DIR_WEATHER_ID, "resolve_request.txt", StringsBase.toHexString(abiEncodedRequest), true);
+        FdcBase.writeToFile(dirPath, "_resolve_request.txt", StringsBase.toHexString(abiEncodedRequest), true);
         
-        console.log("Successfully prepared attestation request and saved to resolve_request.txt");
+        console.log("Successfully prepared attestation request and saved to _resolve_request.txt");
     }
 
     function _prepareFdcRequest(int256 lat, int256 lon) private returns (bytes memory) {
@@ -155,13 +155,13 @@ contract SubmitResolveRequest is WeatherIdScriptBase {
     function run() external {
         console.log("--- Step 2: Submitting resolve request to FDC ---");
         
-        string memory requestHex = vm.readFile(string.concat(FDC_DATA_DIR_WEATHER_ID, "resolve_request.txt"));
+        string memory requestHex = vm.readFile(string.concat(dirPath, "_resolve_request.txt"));
         bytes memory abiEncodedRequest = vm.parseBytes(requestHex);
 
         uint256 submissionTimestamp = FdcBase.submitAttestationRequest(abiEncodedRequest);
         uint256 submissionRoundId = FdcBase.calculateRoundId(submissionTimestamp);
         
-        FdcBase.writeToFile(FDC_DATA_DIR_WEATHER_ID, "resolve_roundId.txt", Strings.toString(submissionRoundId), true);
+        FdcBase.writeToFile(dirPath, "_resolve_roundId.txt", Strings.toString(submissionRoundId), true);
         
         console.log("Request submitted successfully in Voting Round ID:", submissionRoundId);
     }
@@ -173,8 +173,8 @@ contract ExecuteResolve is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         console.log("--- Step 3: Executing resolution for policy", policyId, "---");
         
-        string memory requestHex = vm.readFile(string.concat(FDC_DATA_DIR_WEATHER_ID, "resolve_request.txt"));
-        string memory roundIdStr = vm.readFile(string.concat(FDC_DATA_DIR_WEATHER_ID, "resolve_roundId.txt"));
+        string memory requestHex = vm.readFile(string.concat(dirPath, "_resolve_request.txt"));
+        string memory roundIdStr = vm.readFile(string.concat(dirPath, "_resolve_roundId.txt"));
         uint256 submissionRoundId = FdcBase.stringToUint(roundIdStr);
 
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
