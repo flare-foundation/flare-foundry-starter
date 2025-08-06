@@ -19,11 +19,11 @@ import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol
 // --- Configuration ---
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
 string constant FDC_DATA_DIR = "data/crossChainFdc/";
-string constant CONFIG_FILE = "CrossChainFdcConfig.json";
+uint8 constant FDC_PROTOCOL_ID = 200;
 
 using stdJson for string;
 
-// Deploys all persistent contracts for the example and saves their addresses to a JSON file.
+// Deploys all persistent contracts for the example and saves their addresses to individual .txt files.
 // Run this script once to set up the on-chain infrastructure.
 //      forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url coston2 --broadcast --private-key $PRIVATE_KEY -vvvv
 contract DeployInfrastructure is Script {
@@ -59,22 +59,14 @@ contract DeployInfrastructure is Script {
 
         vm.stopBroadcast();
 
-        // --- CORRECTED JSON WRITING ---
-        // Manually construct a simple, flat JSON string to guarantee the correct format
-        // and prevent parsing errors in subsequent scripts.
         vm.createDir(FDC_DATA_DIR, true);
-        string memory configPath = string.concat(FDC_DATA_DIR, CONFIG_FILE);
-        string memory json = string.concat(
-            '{"addressUpdater":"', vm.toString(address(addressUpdater)),
-            '","fdcVerification":"', vm.toString(address(fdcVerification)),
-            '","starWarsCharacterList":"', vm.toString(address(characterList)),
-            '","relayAddress":"', vm.toString(relayAddress),
-            '"}'
-        );
-        vm.writeFile(configPath, json);
+        vm.writeFile(string.concat(FDC_DATA_DIR, "addressUpdater.txt"), vm.toString(address(addressUpdater)));
+        vm.writeFile(string.concat(FDC_DATA_DIR, "fdcVerification.txt"), vm.toString(address(fdcVerification)));
+        vm.writeFile(string.concat(FDC_DATA_DIR, "starWarsCharacterList.txt"), vm.toString(address(characterList)));
+        vm.writeFile(string.concat(FDC_DATA_DIR, "relayAddress.txt"), vm.toString(relayAddress));
 
         console.log("\n--- Infrastructure Deployment Complete ---");
-        console.log("Configuration saved to:", configPath);
+        console.log("Configuration saved to .txt files in:", FDC_DATA_DIR);
         console.log("\n--- Contract Addresses ---");
         console.log("AddressUpdater:        ", address(addressUpdater));
         console.log("FdcVerification:       ", address(fdcVerification));
@@ -140,11 +132,7 @@ contract ExecuteProofDelivery is Script {
         console.log("--- Step 3: Executing proof delivery ---");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        string memory configPath = string.concat(FDC_DATA_DIR, CONFIG_FILE);
-        string memory configJson = vm.readFile(configPath);
-        require(bytes(configJson).length > 0, "Config file not found. Run DeployInfrastructure first.");
-
-        address characterListAddress = configJson.readAddress(".starWarsCharacterList");
+        address characterListAddress = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR, "starWarsCharacterList.txt")));
         require(characterListAddress != address(0), "starWarsCharacterList address missing from config.");
 
         StarWarsCharacterListV3 characterList = StarWarsCharacterListV3(characterListAddress);
@@ -153,15 +141,10 @@ contract ExecuteProofDelivery is Script {
         string memory requestHex = vm.readFile(string.concat(FDC_DATA_DIR, "abiEncodedRequest.txt"));
         uint256 votingRoundId = FdcBase.stringToUint(vm.readFile(string.concat(FDC_DATA_DIR, "votingRoundId.txt")));
         
-        // --- CORRECTED: Dynamically get protocol ID from the contract instance ---
-        // 1. Read the FdcVerification contract's address from the config file.
-        address fdcVerificationAddress = configJson.readAddress(".fdcVerification");
+        address fdcVerificationAddress = vm.parseAddress(vm.readFile(string.concat(FDC_DATA_DIR, "fdcVerification.txt")));
         require(fdcVerificationAddress != address(0), "FdcVerification address not found in config.");
 
-        // 2. Instantiate the contract using its address and type.
         FdcVerification fdcVerification = FdcVerification(fdcVerificationAddress);
-
-        // 3. Call the function on the contract instance to get the protocol ID.
         uint8 protocolId = fdcVerification.fdcProtocolId();
         
         bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, requestHex, votingRoundId);

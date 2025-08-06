@@ -2,18 +2,17 @@
 pragma solidity ^0.8.25;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Surl} from "surl/Surl.sol";
+import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
 import {Base as StringsBase} from "../../src/utils/fdcStrings/Base.sol";
 import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {WeatherIdAgency} from "../../src/weatherInsurance/WeatherIdAgency.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
-import {IRelay} from "flare-periphery/src/coston2/IRelay.sol";
-import {IFdcHub} from "flare-periphery/src/coston2/IFdcHub.sol";
+import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 
 string constant FDC_DATA_DIR_WEATHER_ID = "data/weatherInsurance/weatherId/";
-// pull the fdc contract through the contract registry
-uint8 constant FDC_PROTOCOL_ID = 200;
+string constant ATTESTATION_TYPE_NAME = "Web2Json";
 
 //      forge script script/WeatherId.s.sol:DeployAgency --rpc-url coston2 --broadcast --verify --verifier blockscout --verifier-url https://coston2-explorer.flare.network/api/ --private-key $PRIVATE_KEY
 contract DeployAgency is Script {
@@ -25,9 +24,8 @@ contract DeployAgency is Script {
         WeatherIdAgency agency = new WeatherIdAgency();
         vm.stopBroadcast();
         
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
-        string memory json = string.concat('{"weatherIdAgencyAddress":"', vm.toString(address(agency)), '"}');
-        vm.writeFile(filePath, json);
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "agencyAddress.txt");
+        vm.writeFile(filePath, vm.toString(address(agency)));
         
         console.log("WeatherIdAgency deployed to:", address(agency));
         console.log("Configuration saved to:", filePath);
@@ -35,16 +33,11 @@ contract DeployAgency is Script {
 }
 
 contract WeatherIdScriptBase is Script {
-    /**
-     * @notice Reads the agency address from the JSON config file and returns an initialized contract instance.
-     */
     function _getAgency() internal returns (WeatherIdAgency) {
-        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "WeatherIdAgency.json");
+        string memory filePath = string.concat(FDC_DATA_DIR_WEATHER_ID, "agencyAddress.txt");
         require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
         
-        string memory json = vm.readFile(filePath);
-
-        address agencyAddress = vm.parseJsonAddress(json, ".weatherIdAgencyAddress");
+        address agencyAddress = vm.parseAddress(vm.readFile(filePath));
         require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
         return WeatherIdAgency(agencyAddress);
     }
@@ -55,14 +48,11 @@ contract WeatherIdScriptBase is Script {
 contract CreatePolicy is WeatherIdScriptBase {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
         WeatherIdAgency agency = _getAgency();
 
-        // --- Get exact coordinates from OpenWeatherMap ---
         string memory apiKey = vm.envString("OPEN_WEATHER_API_KEY");
         require(bytes(apiKey).length > 0, "OPEN_WEATHER_API_KEY must be set in your .env file");
         
-        // Using Miami, FL coordinates as it is currently ~5 PM EDT on an August evening.
         string memory url = string.concat("https://api.openweathermap.org/data/2.5/weather?lat=25.7617&lon=-80.1918&appid=", apiKey, "&units=metric");
         console.log("Fetching exact coordinates from OpenWeatherMap...");
         
@@ -78,7 +68,6 @@ contract CreatePolicy is WeatherIdScriptBase {
         int256 actualLat = FdcBase.stringToScaledInt(latString, 6);
         int256 actualLon = FdcBase.stringToScaledInt(lonString, 6);
 
-        // --- Policy Parameters ---
         uint256 startOffset = 120; // Starts in 2 minutes
         uint256 duration = 60 * 60; // Lasts 1 hour
         uint256 weatherIdThreshold = 800; // ID for "clear sky" is 800. Payout if weather is not clear.
@@ -100,9 +89,7 @@ contract CreatePolicy is WeatherIdScriptBase {
 contract ClaimPolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
         WeatherIdAgency agency = _getAgency();
-        
         WeatherIdAgency.Policy memory policy = agency.getPolicy(policyId);
         require(policy.status == WeatherIdAgency.PolicyStatus.Unclaimed, "Policy already claimed or settled");
         
@@ -134,7 +121,6 @@ contract PrepareResolveRequest is WeatherIdScriptBase {
         string memory requestBody = _prepareApiRequestBody(lat, lon);
         string memory url = string.concat(vm.envString("WEB2JSON_VERIFIER_URL_TESTNET"), "Web2Json/prepareRequest");
         
-        // *** FIX: The 'body' variable should be 'string memory', not 'string[] memory'. ***
         (string[] memory headers, string memory body) = FdcBase.prepareAttestationRequest(
             FdcBase.toUtf8HexString("Web2Json"), 
             FdcBase.toUtf8HexString("PublicWeb2"), 
@@ -175,7 +161,6 @@ contract SubmitResolveRequest is WeatherIdScriptBase {
         uint256 submissionTimestamp = FdcBase.submitAttestationRequest(abiEncodedRequest);
         uint256 submissionRoundId = FdcBase.calculateRoundId(submissionTimestamp);
         
-        // Save the round ID to a file for the final step
         FdcBase.writeToFile(FDC_DATA_DIR_WEATHER_ID, "resolve_roundId.txt", Strings.toString(submissionRoundId), true);
         
         console.log("Request submitted successfully in Voting Round ID:", submissionRoundId);
@@ -192,14 +177,15 @@ contract ExecuteResolve is WeatherIdScriptBase {
         string memory roundIdStr = vm.readFile(string.concat(FDC_DATA_DIR_WEATHER_ID, "resolve_roundId.txt"));
         uint256 submissionRoundId = FdcBase.stringToUint(roundIdStr);
 
-        // This is the long-running part that waits and polls
+        IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
+        uint8 protocolId = fdcVerification.fdcProtocolId();
+
         bytes memory proofData = FdcBase.retrieveProofWithPolling(
-            FDC_PROTOCOL_ID,
+            protocolId,
             requestHex,
             submissionRoundId
         );
 
-        // Now broadcast the final transaction
         WeatherIdAgency agency = _getAgency();
         FdcBase.ParsableProof memory parsableProof = abi.decode(proofData, (FdcBase.ParsableProof));
         IWeb2Json.Response memory proofResponse = abi.decode(parsableProof.responseHex, (IWeb2Json.Response));
@@ -218,9 +204,7 @@ contract ExecuteResolve is WeatherIdScriptBase {
 contract ExpirePolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
         WeatherIdAgency agency = _getAgency();
-        
         vm.startBroadcast(deployerPrivateKey);
         agency.expirePolicy(policyId);
         vm.stopBroadcast();
@@ -232,9 +216,7 @@ contract ExpirePolicy is WeatherIdScriptBase {
 contract RetireUnclaimedPolicy is WeatherIdScriptBase {
     function run(uint256 policyId) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
         WeatherIdAgency agency = _getAgency();
-
         vm.startBroadcast(deployerPrivateKey);
         agency.retireUnclaimedPolicy(policyId);
         vm.stopBroadcast();

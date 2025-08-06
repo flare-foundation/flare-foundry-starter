@@ -10,10 +10,10 @@ import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {MinTempAgency} from "src/weatherInsurance/MinTempAgency.sol";
 import {IFlareSystemsManager} from "flare-periphery/src/coston2/IFlareSystemsManager.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
+import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 
 string constant FDC_DATA_DIR = "data/weatherInsurance/";
 string constant ATTESTATION_TYPE_NAME = "Web2Json";
-uint8 constant FDC_PROTOCOL_ID = 200;
 
 //      forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify -vvvv
 contract DeployAgency is Script {
@@ -25,32 +25,52 @@ contract DeployAgency is Script {
         vm.stopBroadcast();
         console.log("MinTempAgency deployed to:", address(agency));
         
-        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
-        string memory json = string.concat('{"agencyAddress":"', vm.toString(address(agency)), '"}');
-        vm.writeFile(filePath, json);
+        // --- UPDATED: Write to a simple .txt file ---
+        string memory filePath = string.concat(FDC_DATA_DIR, "agencyAddress.txt");
+        vm.writeFile(filePath, vm.toString(address(agency)));
         console.log("MinTempAgency address saved to:", filePath);   
     }
 }
 
 contract WeatherScriptBase is Script {
     function _getAgency() internal returns (MinTempAgency) {
-        string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
+        // --- UPDATED: Read from a simple .txt file ---
+        string memory filePath = string.concat(FDC_DATA_DIR, "agencyAddress.txt");
         require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
-        string memory json = vm.readFile(filePath);
-        address agencyAddress = vm.parseJsonAddress(json, ".agencyAddress"); 
+        
+        address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
         require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
         return MinTempAgency(agencyAddress);
     }
 }
 
 
-//      forge script script/MinTemp.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast -vvvv
+//      forge script script/MinTemp.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast --ffi -vvvv
 contract CreatePolicy is WeatherScriptBase {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         MinTempAgency agency = _getAgency();
-        int256 latitude = 46419402; // Scaled by 1e6 (e.g., 46.419402 for Maribor, Slovenia)
-        int256 longitude = 15587079; // Scaled by 1e6 (e.g., 15.587079)
+
+        // Fetch the exact coordinates from the API first to ensure they match the proof.
+        string memory apiKey = vm.envString("OPEN_WEATHER_API_KEY");
+        require(bytes(apiKey).length > 0, "OPEN_WEATHER_API_KEY must be set in your .env file");
+        
+        string memory url = string.concat("https://api.openweathermap.org/data/2.5/weather?lat=46.419402&lon=15.587079&appid=", apiKey, "&units=metric");
+        console.log("Fetching exact coordinates from OpenWeatherMap...");
+        
+        string[] memory inputs = new string[](3);
+        inputs[0] = "curl";
+        inputs[1] = "-s";
+        inputs[2] = url;
+        string memory jsonResponse = string(vm.ffi(inputs));
+        
+        string memory latString = vm.parseJsonString(jsonResponse, ".coord.lat");
+        string memory lonString = vm.parseJsonString(jsonResponse, ".coord.lon");
+
+        int256 actualLatitude = FdcBase.stringToScaledInt(latString, 6);
+        int256 actualLongitude = FdcBase.stringToScaledInt(lonString, 6);
+
+        // Policy Parameters
         uint256 startOffset = 180; // Starts in 3 minutes
         uint256 duration = 60 * 60; // Lasts 1 hour
         int256 minTempThreshold = 10 * 1e6; // 10 degrees Celsius
@@ -60,10 +80,10 @@ contract CreatePolicy is WeatherScriptBase {
         uint256 expirationTimestamp = startTimestamp + duration;
 
         vm.startBroadcast(deployerPrivateKey);
-        agency.createPolicy{value: premium}(latitude, longitude, startTimestamp, expirationTimestamp, minTempThreshold, coverage);
+        agency.createPolicy{value: premium}(actualLatitude, actualLongitude, startTimestamp, expirationTimestamp, minTempThreshold, coverage);
         vm.stopBroadcast();
         
-        console.log("Policy created successfully. Check the contract on the block explorer for the new policy ID.");
+        console.log("Policy created successfully for exact coordinates lat/lon:", latString, lonString);
     }
 }
 
@@ -152,14 +172,15 @@ contract ExecuteResolve is WeatherScriptBase {
         string memory roundIdStr = vm.readFile(string.concat(FDC_DATA_DIR, "resolve_roundId.txt"));
         uint256 submissionRoundId = FdcBase.stringToUint(roundIdStr);
 
-        // This is the long-running part that waits and polls
+        IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
+        uint8 protocolId = fdcVerification.fdcProtocolId();
+
         bytes memory proofData = FdcBase.retrieveProofWithPolling(
-            FDC_PROTOCOL_ID,
+            protocolId,
             requestHex,
             submissionRoundId
         );
 
-        // Now broadcast the final transaction
         MinTempAgency agency = _getAgency();
         FdcBase.ParsableProof memory parsableProof = abi.decode(proofData, (FdcBase.ParsableProof));
         IWeb2Json.Response memory proofResponse = abi.decode(parsableProof.responseHex, (IWeb2Json.Response));
