@@ -14,13 +14,16 @@ import {TokenStateReader} from "../../src/proofOfReserves/TokenStateReader.sol";
 import {ProofOfReserves} from "../../src/proofOfReserves/ProofOfReserves.sol";
 
 string constant FDC_DATA_DIR_POR = "data/proofOfReserves/";
-string constant CONFIG_FILE = "ProofOfReserves.json";
 
-// Magic to avoid json errors
+// This directive links the stdJson library functions to the 'string' type.
 using stdJson for string;
 
-// Deploys contracts. Run once for Coston and once for Coston2.
-// This script creates/updates the central `ProofOfReserves.json` config file.
+// Helper function to generate a chain-specific config filename.
+function getConfigPath(uint256 chainId) pure returns (string memory) {
+    return string.concat(FDC_DATA_DIR_POR, "ProofOfReserves-", Strings.toString(chainId), ".json");
+}
+
+// Deploys contracts and writes to a chain-specific JSON file.
 //      forge script script/ProofOfReserves.s.sol:Deploy --rpc-url coston --broadcast -vvvv
 //      forge script script/ProofOfReserves.s.sol:Deploy --rpc-url coston2 --broadcast -vvvv
 contract Deploy is Script {
@@ -30,25 +33,26 @@ contract Deploy is Script {
         uint256 chainId = block.chainid;
 
         vm.createDir(FDC_DATA_DIR_POR, true);
-        string memory configPath = string.concat(FDC_DATA_DIR_POR, CONFIG_FILE);
-        if (!vm.exists(configPath)) {
-            vm.writeFile(configPath, "{}");
-        }
+        string memory configPath = getConfigPath(chainId);
 
         vm.startBroadcast(deployerPrivateKey);
 
         MyStablecoin token = new MyStablecoin(owner, owner);
         TokenStateReader reader = new TokenStateReader();
 
-        string memory json = vm.readFile(configPath);
+        string memory json;
         if (chainId == 16) { // Coston
-            json = json.serialize(".token_coston", vm.toString(address(token)));
-            json = json.serialize(".reader_coston", vm.toString(address(reader)));
+            json = string.concat(
+                '{"token":"', vm.toString(address(token)),
+                '","reader":"', vm.toString(address(reader)), '"}'
+            );
         } else if (chainId == 114) { // Coston2
             ProofOfReserves proofOfReserves = new ProofOfReserves();
-            json = json.serialize(".token_coston2", vm.toString(address(token)));
-            json = json.serialize(".reader_coston2", vm.toString(address(reader)));
-            json = json.serialize(".proofOfReserves_coston2", vm.toString(address(proofOfReserves)));
+            json = string.concat(
+                '{"token":"', vm.toString(address(token)),
+                '","reader":"', vm.toString(address(reader)),
+                '","proofOfReserves":"', vm.toString(address(proofOfReserves)), '"}'
+            );
             console.log("ProofOfReserves deployed to:", address(proofOfReserves));
         }
         vm.writeFile(configPath, json);
@@ -59,12 +63,10 @@ contract Deploy is Script {
         console.log("MyStablecoin deployed to:", address(token));
         console.log("TokenStateReader deployed to:", address(reader));
         console.log("Configuration saved to:", configPath);
-        console.log("\nNOTE: The Config.s.sol file is no longer needed and can be deleted.");
     }
 }
 
-// Creates transactions on Coston and Coston2 to emit provable events.
-// This script now automatically saves the transaction hash to the JSON config file.
+// Creates transactions and updates the appropriate chain-specific JSON file.
 //      forge script script/ProofOfReserves.s.sol:ActivateReaders --rpc-url coston --broadcast -vvvv
 //      forge script script/ProofOfReserves.s.sol:ActivateReaders --rpc-url coston2 --broadcast -vvvv
 contract ActivateReaders is Script {
@@ -72,24 +74,11 @@ contract ActivateReaders is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         uint256 chainId = block.chainid;
         
-        string memory configPath = string.concat(FDC_DATA_DIR_POR, CONFIG_FILE);
+        string memory configPath = getConfigPath(chainId);
         string memory configJson = vm.readFile(configPath);
 
-        address tokenAddress;
-        address readerAddress;
-        string memory txHashKey;
-
-        if (chainId == 16) { // Coston
-            tokenAddress = configJson.readAddress(".token_coston");
-            readerAddress = configJson.readAddress(".reader_coston");
-            txHashKey = ".txHash_coston";
-        } else if (chainId == 114) { // Coston2
-            tokenAddress = configJson.readAddress(".token_coston2");
-            readerAddress = configJson.readAddress(".reader_coston2");
-            txHashKey = ".txHash_coston2";
-        } else {
-            revert("Unsupported chain ID for this script. Run on Coston (16) or Coston2 (114).");
-        }
+        address tokenAddress = configJson.readAddress(".token");
+        address readerAddress = configJson.readAddress(".reader");
         require(tokenAddress != address(0) && readerAddress != address(0), "Addresses not found in JSON config.");
 
         TokenStateReader reader = TokenStateReader(readerAddress);
@@ -103,8 +92,7 @@ contract ActivateReaders is Script {
         string memory receiptJson = vm.readFile(receiptPath);
         string memory txHash = receiptJson.readString(".transactions[0].transactionHash");
         
-        configJson = vm.readFile(configPath); // Re-read in case of parallel runs
-        string memory updatedJson = configJson.serialize(txHashKey, txHash);
+        string memory updatedJson = configJson.serialize(".txHash", txHash);
         vm.writeFile(configPath, updatedJson);
 
         console.log("Reader activated for token:", address(token), "on chain:", chainId);
@@ -112,18 +100,19 @@ contract ActivateReaders is Script {
     }
 }
 
-// Step 1: Prepare all attestation requests and save them to files.
+// Prepares requests by reading from both chain-specific JSON files.
 //      forge script script/ProofOfReserves.s.sol:PrepareRequests --rpc-url coston2 --ffi -vvvv
 contract PrepareRequests is Script {
     function run() external {
         vm.createDir(FDC_DATA_DIR_POR, true);
 
-        // Read transaction hashes from the JSON config file
-        string memory configPath = string.concat(FDC_DATA_DIR_POR, CONFIG_FILE);
-        string memory configJson = vm.readFile(configPath);
-        string memory txHashCoston = configJson.readString(".txHash_coston");
-        string memory txHashCoston2 = configJson.readString(".txHash_coston2");
-        require(bytes(txHashCoston).length > 0 && bytes(txHashCoston2).length > 0, "Transaction hashes not found in JSON config. Run ActivateReaders first.");
+        // Read from both chain-specific config files
+        string memory configCoston = vm.readFile(getConfigPath(16));
+        string memory configCoston2 = vm.readFile(getConfigPath(114));
+
+        string memory txHashCoston = configCoston.readString(".txHash");
+        string memory txHashCoston2 = configCoston2.readString(".txHash");
+        require(bytes(txHashCoston).length > 0 && bytes(txHashCoston2).length > 0, "Transaction hashes not found in JSON configs. Run ActivateReaders on both chains first.");
 
         bytes memory web2JsonRequest = prepareWeb2JsonRequest();
         FdcBase.writeToFile(FDC_DATA_DIR_POR, "Web2Json_request.txt", StringsBase.toHexString(web2JsonRequest), true);
@@ -222,14 +211,15 @@ contract VerifyReserves is Script {
         IEVMTransaction.Proof memory evmCostonProof = abi.decode(vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston_proof.txt"))), (IEVMTransaction.Proof));
         IEVMTransaction.Proof memory evmCoston2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(FDC_DATA_DIR_POR, "EVMTransaction_Coston2_proof.txt"))), (IEVMTransaction.Proof));
         
-        // Read addresses from the JSON config file
-        string memory configPath = string.concat(FDC_DATA_DIR_POR, CONFIG_FILE);
-        string memory configJson = vm.readFile(configPath);
-        address proofOfReservesAddress = configJson.readAddress(".proofOfReserves_coston2");
-        address readerCostonAddress = configJson.readAddress(".reader_coston");
-        address tokenCostonAddress = configJson.readAddress(".token_coston");
-        address readerCoston2Address = configJson.readAddress(".reader_coston2");
-        address tokenCoston2Address = configJson.readAddress(".token_coston2");
+        // Read addresses from the appropriate chain-specific JSON config files
+        string memory configCoston = vm.readFile(getConfigPath(16));
+        string memory configCoston2 = vm.readFile(getConfigPath(114));
+
+        address proofOfReservesAddress = configCoston2.readAddress(".proofOfReserves");
+        address readerCostonAddress = configCoston.readAddress(".reader");
+        address tokenCostonAddress = configCoston.readAddress(".token");
+        address readerCoston2Address = configCoston2.readAddress(".reader");
+        address tokenCoston2Address = configCoston2.readAddress(".token");
         require(proofOfReservesAddress != address(0), "ProofOfReserves address not found in config.");
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
