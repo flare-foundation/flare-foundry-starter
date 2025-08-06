@@ -24,7 +24,6 @@ contract DeployAgency is Script {
         vm.stopBroadcast();
         console.log("MinTempAgency deployed to:", address(agency));
         
-        // *** FIX: Use a more descriptive key name for clarity. ***
         string memory filePath = string.concat(FDC_DATA_DIR, "MinTempAgency.json");
         string memory json = string.concat('{"agencyAddress":"', vm.toString(address(agency)), '"}');
         vm.writeFile(filePath, json);
@@ -58,7 +57,6 @@ contract CreatePolicy is WeatherScriptBase {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
-        // *** FIX: Replaced duplicated code with a single, correct helper function call. ***
         MinTempAgency agency = _getAgency();
 
         // Policy Parameters
@@ -86,7 +84,6 @@ contract ClaimPolicy is WeatherScriptBase {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY"); // Using same key for simplicity
         
-        // *** FIX: Replaced duplicated code with a single, correct helper function call. ***
         MinTempAgency agency = _getAgency();
         
         MinTempAgency.Policy memory policy = agency.getPolicy(policyId);

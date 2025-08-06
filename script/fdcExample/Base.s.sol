@@ -13,6 +13,9 @@ import {TransferEventListener} from "src/FdcTransferEventListener.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {IFdcRequestFeeConfigurations} from "flare-periphery/src/coston2/IFdcRequestFeeConfigurations.sol";
 import {IRelay} from "flare-periphery/src/coston2/IRelay.sol";
+import {stdJson} from "forge-std/StdJson.sol";
+
+// using stdJson for string;
 
 address constant VM_ADDRESS = address(
     uint160(uint256(keccak256("hevm cheat code")))
@@ -223,9 +226,9 @@ library Base {
     //                      POLLING & PROOF RETRIEVAL
     //-/////////////////////////////////////////////////////////////////////////
 
-    /**
+     /**
      * @notice Waits for a specific voting round to be finalized on-chain.
-     * @dev Polls the `isFinalized` function on the Relay contract.
+     * @dev Polls the `isFinalized` function on the Relay contract using real-world delays.
      * @param protocolId The protocol ID for the attestation.
      * @param roundId The voting round ID to check.
      */
@@ -238,32 +241,36 @@ library Base {
             Strings.toString(protocolId)
         );
 
+        string[] memory sleepCmd = new string[](3);
+        sleepCmd[0] = "bash";
+        sleepCmd[1] = "-c";
+
         for (uint256 i = 0; i < MAX_FINALIZATION_ATTEMPTS; i++) {
-            vm.roll(block.number + 1); // Ensure state change is reflected
+            // No need to roll the block on a live network.
             if (relay.isFinalized(protocolId, roundId)) {
                 console.log("Round %s is finalized on-chain!", Strings.toString(roundId));
-                return;
+                return; // Success, exit the function
             }
+
             console.log(
                 "Round not finalized (attempt %s/%s). Waiting %s seconds...",
                 Strings.toString(i + 1),
                 Strings.toString(MAX_FINALIZATION_ATTEMPTS),
                 Strings.toString(FINALIZATION_POLL_INTERVAL_SECONDS)
             );
-            vm.sleep(FINALIZATION_POLL_INTERVAL_SECONDS);
+
+            // Use ffi to call the real-world 'sleep' command, which pauses the script.
+            sleepCmd[2] = string.concat("sleep ", Strings.toString(FINALIZATION_POLL_INTERVAL_SECONDS));
+            vm.ffi(sleepCmd);
         }
+
         revert(
             "Failed to confirm round finalization on-chain. The network may be slow or the roundId/protocolId may be incorrect."
         );
     }
 
-    /**
+     /**
      * @notice Retrieves a proof from the Data Availability Layer with polling.
-     * @dev First waits for the round to be finalized on-chain, then polls the DA Layer API.
-     * @param protocolId The protocol ID.
-     * @param requestBytesHex The hex representation of the request bytes.
-     * @param votingRoundId The voting round ID.
-     * @return The JSON data containing the proof.
      */
     function retrieveProofWithPolling(
         uint8 protocolId,
@@ -276,41 +283,49 @@ library Base {
         // Stage 2: Poll the Data Availability Layer
         string memory daLayerUrl = vm.envString("COSTON2_DA_LAYER_URL");
         require(bytes(daLayerUrl).length > 0, "COSTON2_DA_LAYER_URL env var not set");
-
+        
         string[] memory headers = prepareHeaders(vm.envString("X_API_KEY"));
-        string memory body = string.concat(
-            '{"votingRoundId":',
-            Strings.toString(votingRoundId),
-            ',"requestBytes":"',
-            requestBytesHex,
-            '"}'
-        );
+        string memory body = string.concat('{"votingRoundId":', Strings.toString(votingRoundId), ',"requestBytes":"', requestBytesHex, '"}');
         string memory url = string.concat(daLayerUrl, "api/v1/fdc/proof-by-request-round-raw");
 
         console.log("Polling DA Layer URL:", url);
-        console.log("Request Body:", body);
 
-        bytes memory data;
+        bytes memory parsedProofData;
+        string[] memory sleepCmd = new string[](3);
+        sleepCmd[0] = "bash";
+        sleepCmd[1] = "-c";
+
+        string[] memory jqCmd = new string[](3);
+        jqCmd[0] = "bash";
+        jqCmd[1] = "-c";
+
         for (uint256 i = 0; i < MAX_DA_LAYER_ATTEMPTS; i++) {
             (, bytes memory responseData) = postAttestationRequest(url, headers, body);
             string memory responseString = string(responseData);
 
-            if (bytes(responseString).length > 100 && vm.parseJsonBool(responseString, ".response_hex")) {
+            // Use vm.ffi with jq to safely check for the existence of the ".response_hex" key.
+            // The jq command '.response_hex // "null"' will output the key's value if it exists,
+            // or the string "null" otherwise. This is a safe way to check without causing a revert.
+            jqCmd[2] = string.concat("echo '", responseString, "' | jq -r '.response_hex // \"null\"'");
+            bytes memory validationResult = vm.ffi(jqCmd);
+            
+            // We succeed if the result is not "null" and the response has a reasonable length.
+            if (keccak256(validationResult) != keccak256(bytes("null"))) {
                 console.log("Proof successfully retrieved from DA Layer.");
-                data = parseData(responseData);
-                break;
+                parsedProofData = parseData(responseData);
+                break; // Exit the loop on success
             }
-            console.log(
-                "Proof not available on DA Layer yet (attempt %s/%s). Waiting %s seconds...",
-                Strings.toString(i + 1),
-                Strings.toString(MAX_DA_LAYER_ATTEMPTS),
-                Strings.toString(DA_LAYER_POLL_INTERVAL_SECONDS)
-            );
-            vm.sleep(DA_LAYER_POLL_INTERVAL_SECONDS);
+
+            console.log("Proof not available yet (attempt %s/%s). Waiting %s seconds...", i + 1, MAX_DA_LAYER_ATTEMPTS, DA_LAYER_POLL_INTERVAL_SECONDS);
+            if (bytes(responseString).length > 0) {
+                console.log("Received API Response:", responseString);
+            }
+            sleepCmd[2] = string.concat("sleep ", Strings.toString(DA_LAYER_POLL_INTERVAL_SECONDS));
+            vm.ffi(sleepCmd);
         }
 
-        require(data.length > 0, "Failed to retrieve proof after multiple attempts.");
-        return data;
+        require(parsedProofData.length > 0, "Failed to retrieve proof after all attempts.");
+        return parsedProofData;
     }
 
     //-/////////////////////////////////////////////////////////////////////////
