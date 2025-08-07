@@ -230,47 +230,35 @@ library Base {
      * @param protocolId The protocol ID for the attestation.
      * @param roundId The voting round ID to check.
      */
-    function waitForRoundFinalization(uint8 protocolId, uint256 roundId) internal {
+    function waitForRoundFinalization(uint8 protocolId, uint256 roundId) internal view {
         IRelay relay = ContractRegistry.getRelay();
         console.log("Using Relay contract at address:", address(relay));
         console.log(
-            "Waiting for on-chain finalization of Voting Round ID: %s using Protocol ID: %s",
+            "Checking for on-chain finalization of Voting Round ID: %s using Protocol ID: %s",
             Strings.toString(roundId),
             Strings.toString(protocolId)
         );
 
-        string[] memory sleepCmd = new string[](3);
-        sleepCmd[0] = "bash";
-        sleepCmd[1] = "-c";
-
-        for (uint256 i = 0; i < MAX_FINALIZATION_ATTEMPTS; i++) {
-            // No need to roll the block on a live network.
-            if (relay.isFinalized(protocolId, roundId)) {
-                console.log("Round %s is finalized on-chain!", Strings.toString(roundId));
-                return; // Success, exit the function
-            }
-
+        if (relay.isFinalized(protocolId, roundId)) {
+            console.log("Round %s is finalized on-chain!", Strings.toString(roundId));
+        } else {
+            // log the url that has the correct voting round
             console.log(
-                "Round not finalized (attempt %s/%s). Waiting %s seconds...",
-                Strings.toString(i + 1),
-                Strings.toString(MAX_FINALIZATION_ATTEMPTS),
-                Strings.toString(FINALIZATION_POLL_INTERVAL_SECONDS)
+                string.concat(
+                    "Round ",
+                    Strings.toString(roundId),
+                    " is not finalized on-chain. Check progress here: https://coston2-systems-explorer.flare.rocks/voting-round/",
+                    Strings.toString(roundId)
+                )
             );
-
-            // Use ffi to call the real-world 'sleep' command, which pauses the script.
-            sleepCmd[2] = string.concat("sleep ", Strings.toString(FINALIZATION_POLL_INTERVAL_SECONDS));
-            vm.ffi(sleepCmd);
+            revert("Round not finalized on-chain.");
         }
-
-        revert(
-            "Failed to confirm round finalization on-chain. The network may be slow or the roundId/protocolId may be incorrect."
-        );
     }
 
      /**
      * @notice Retrieves a proof from the Data Availability Layer with polling.
      */
-    function retrieveProofWithPolling(
+    function retrieveProof(
         uint8 protocolId,
         string memory requestBytesHex,
         uint256 votingRoundId
@@ -289,37 +277,27 @@ library Base {
         console.log("Polling DA Layer URL:", url);
 
         bytes memory parsedProofData;
-        string[] memory sleepCmd = new string[](3);
-        sleepCmd[0] = "bash";
-        sleepCmd[1] = "-c";
 
         string[] memory jqCmd = new string[](3);
         jqCmd[0] = "bash";
         jqCmd[1] = "-c";
 
-        for (uint256 i = 0; i < MAX_DA_LAYER_ATTEMPTS; i++) {
-            (, bytes memory responseData) = postAttestationRequest(url, headers, body);
-            string memory responseString = string(responseData);
+        (, bytes memory responseData) = postAttestationRequest(url, headers, body);
+        string memory responseString = string(responseData);
 
-            // Use vm.ffi with jq to safely check for the existence of the ".response_hex" key.
-            // The jq command '.response_hex // "null"' will output the key's value if it exists,
-            // or the string "null" otherwise. This is a safe way to check without causing a revert.
-            jqCmd[2] = string.concat("echo '", responseString, "' | jq -r '.response_hex // \"null\"'");
-            bytes memory validationResult = vm.ffi(jqCmd);
-            
-            // We succeed if the result is not "null" and the response has a reasonable length.
-            if (keccak256(validationResult) != keccak256(bytes("null"))) {
-                console.log("Proof successfully retrieved from DA Layer.");
-                parsedProofData = parseData(responseData);
-                break; // Exit the loop on success
-            }
-
-            console.log("Proof not available yet (attempt %s/%s). Waiting %s seconds...", i + 1, MAX_DA_LAYER_ATTEMPTS, DA_LAYER_POLL_INTERVAL_SECONDS);
+        // Use vm.ffi with jq to safely check for the existence of the ".response_hex" key.
+        jqCmd[2] = string.concat("echo '", responseString, "' | jq -r '.response_hex // \"null\"'");
+        bytes memory validationResult = vm.ffi(jqCmd);
+        
+        // We succeed if the result is not "null" and the response has a reasonable length.
+        if (keccak256(validationResult) != keccak256(bytes("null"))) {
+            console.log("Proof successfully retrieved from DA Layer.");
+            parsedProofData = parseData(responseData);
+        } else {
             if (bytes(responseString).length > 0) {
                 console.log("Received API Response:", responseString);
             }
-            sleepCmd[2] = string.concat("sleep ", Strings.toString(DA_LAYER_POLL_INTERVAL_SECONDS));
-            vm.ffi(sleepCmd);
+            revert("Proof not available from DA Layer.");
         }
 
         require(parsedProofData.length > 0, "Failed to retrieve proof after all attempts.");

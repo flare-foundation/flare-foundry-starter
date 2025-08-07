@@ -188,7 +188,7 @@ contract ExecuteResolve is Script {
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
         uint8 protocolId = fdcVerification.fdcProtocolId();
 
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(
+        bytes memory proofData = FdcBase.retrieveProof(
             protocolId,
             requestHex,
             submissionRoundId
@@ -258,4 +258,5 @@ contract RetireUnclaimedPolicy is Script {
         require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
         return MinTempAgency(agencyAddress);
     }
+
 }

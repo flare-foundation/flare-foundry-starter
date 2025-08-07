@@ -110,7 +110,7 @@ contract RetrieveProof is Script {
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
         uint8 protocolId = fdcVerification.fdcProtocolId();
         
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, requestHex, votingRoundId);
+        bytes memory proofData = FdcBase.retrieveProof(protocolId, requestHex, votingRoundId);
 
         FdcBase.ParsableProof memory proof = abi.decode(proofData, (FdcBase.ParsableProof));
         IEVMTransaction.Response memory proofResponse = abi.decode(proof.responseHex, (IEVMTransaction.Response));

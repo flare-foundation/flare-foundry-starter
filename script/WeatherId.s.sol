@@ -179,7 +179,7 @@ contract ExecuteResolve is WeatherIdScriptBase {
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
         uint8 protocolId = fdcVerification.fdcProtocolId();
 
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(
+        bytes memory proofData = FdcBase.retrieveProof(
             protocolId,
             requestHex,
             submissionRoundId

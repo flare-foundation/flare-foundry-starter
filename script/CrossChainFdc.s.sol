@@ -71,8 +71,8 @@ contract DeployInfrastructure is Script {
 }
 
 // Run this script after deploying the infrastructure, or any time you update the consumer contract.
-//      forge script script/CrossChainFdc.s.sol:DeployConsumer --rpc-url $COSTON2_RPC_URL --broadcast
-contract DeployConsumer is Script {
+//      forge script script/CrossChainFdc.s.sol:DeployConsumerContract --rpc-url $COSTON2_RPC_URL --broadcast
+contract DeployConsumerContract is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
@@ -146,8 +146,8 @@ contract SubmitRequest is Script {
 
 // STEP 3: Waits, retrieves proof, and delivers it to the consumer contract.
 //    *** RUN THIS SCRIPT ON THE TARGET CHAIN (e.g., Coston2) ***
-//      forge script script/CrossChainFdc.s.sol:InteractWithContract --rpc-url $COSTON2_RPC_URL --broadcast --ffi
-contract InteractWithContract is Script {
+//      forge script script/CrossChainFdc.s.sol:InteractWithConsumerContract --rpc-url $COSTON2_RPC_URL --broadcast --ffi
+contract InteractWithConsumerContract is Script {
     function run() external {
         console.log("--- Step 3: Executing proof delivery ---");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -164,7 +164,7 @@ contract InteractWithContract is Script {
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
         uint8 protocolId = fdcVerification.fdcProtocolId();
         
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, requestHex, votingRoundId);
+        bytes memory proofData = FdcBase.retrieveProof(protocolId, requestHex, votingRoundId);
 
         FdcBase.ParsableProof memory parsedProof = abi.decode(proofData, (FdcBase.ParsableProof));
         IWeb2Json.Response memory proofResponse = abi.decode(parsedProof.responseHex, (IWeb2Json.Response));

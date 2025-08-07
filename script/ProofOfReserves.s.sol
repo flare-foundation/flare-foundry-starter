@@ -180,7 +180,7 @@ contract RetrieveProofs is Script {
     function retrieveWeb2JsonProof(bytes memory req, uint256 roundId) internal returns (IWeb2Json.Proof memory) {
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
         uint8 protocolId = fdcVerification.fdcProtocolId();
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, StringsBase.toHexString(req), roundId);
+        bytes memory proofData = FdcBase.retrieveProof(protocolId, StringsBase.toHexString(req), roundId);
         FdcBase.ParsableProof memory p = abi.decode(proofData, (FdcBase.ParsableProof));
         IWeb2Json.Response memory r = abi.decode(p.responseHex, (IWeb2Json.Response));
         return IWeb2Json.Proof(p.proofs, r);
@@ -189,7 +189,7 @@ contract RetrieveProofs is Script {
     function retrieveEvmProof(bytes memory req, uint256 roundId) internal returns (IEVMTransaction.Proof memory) {
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
         uint8 protocolId = fdcVerification.fdcProtocolId();
-        bytes memory proofData = FdcBase.retrieveProofWithPolling(protocolId, StringsBase.toHexString(req), roundId);
+        bytes memory proofData = FdcBase.retrieveProof(protocolId, StringsBase.toHexString(req), roundId);
         FdcBase.ParsableProof memory p = abi.decode(proofData, (FdcBase.ParsableProof));
         IEVMTransaction.Response memory r = abi.decode(p.responseHex, (IEVMTransaction.Response));
         return IEVMTransaction.Proof(p.proofs, r);
