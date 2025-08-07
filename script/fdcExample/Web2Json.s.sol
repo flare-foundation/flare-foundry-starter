@@ -25,7 +25,7 @@ contract PrepareAttestationRequest is Script {
     string public apiUrl = "https://swapi.info/api/people/3";
     string public httpMethod = "GET";
     // Defaults to "Content-Type": "application/json"
-    string public headers = '{\\"Content-Type\\":\\"text/plain\\"}';
+    string public headers = "";
     string public queryParams = "{}";
     string public body = "{}";
     string public postProcessJq =
