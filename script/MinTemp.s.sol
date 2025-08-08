@@ -5,6 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 import {Surl} from "surl/Surl.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
+import {Vm} from "dependencies/forge-std-1.9.5/src/Vm.sol";
 import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
 import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
 import {MinTempAgency} from "src/weatherInsurance/MinTempAgency.sol";
@@ -12,8 +13,23 @@ import {IFlareSystemsManager} from "flare-periphery/src/coston2/IFlareSystemsMan
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 
+address constant VM_ADDRESS = address(
+    uint160(uint256(keccak256("hevm cheat code")))
+);
+Vm constant vm = Vm(VM_ADDRESS);
+
 string constant dirPath = "data/weatherInsurance/";
 string constant attestationTypeName = "Web2Json";
+
+// helper to read address from file
+function _getAgency() view returns (MinTempAgency) {
+        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
+        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
+        
+        address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
+        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
+        return MinTempAgency(agencyAddress);
+    }
 
 //      forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify
 contract DeployAgency is Script {
@@ -72,14 +88,7 @@ contract CreatePolicy is Script {
         console.log("Policy created successfully for exact coordinates lat/lon:", latString, lonString);
     }
 
-    function _getAgency() internal view returns (MinTempAgency) {
-        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
-        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
-        
-        address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
-        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
-        return MinTempAgency(agencyAddress);
-    }
+    
 }
 
 //      forge script script/MinTemp.s.sol:ClaimPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
@@ -95,15 +104,6 @@ contract ClaimPolicy is Script {
         vm.stopBroadcast();
         
         console.log("Policy", policyId, "claimed successfully by insurer:", vm.addr(insurerPrivateKey));
-    }
-
-    function _getAgency() internal view returns (MinTempAgency) {
-        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
-        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
-        
-        address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
-        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
-        return MinTempAgency(agencyAddress);
     }
 }
 
@@ -145,15 +145,6 @@ contract PrepareResolveRequest is Script {
         string memory postProcessJq = '{\\"latitude\\": (.coord.lat | if . != null then .*1000000 else 0 end | floor),\\"longitude\\": (.coord.lon | if . != null then .*1000000 else 0 end | floor),\\"description\\": .weather[0].description,\\"temperature\\": (.main.temp | if . != null then .*1000000 else 0 end | floor),\\"minTemp\\": (.main.temp_min | if . != null then .*1000000 else 0 end | floor),\\"windSpeed\\": (.wind.speed | if . != null then . *1000000 else 0 end | floor),\\"windDeg\\": .wind.deg}';
         string memory abiSignature = '{\\"components\\":[{\\"internalType\\":\\"int256\\",\\"name\\":\\"latitude\\",\\"type\\":\\"int256\\"},{\\"internalType\\":\\"int256\\",\\"name\\":\\"longitude\\",\\"type\\":\\"int256\\"},{\\"internalType\\":\\"string\\",\\"name\\":\\"description\\",\\"type\\":\\"string\\"},{\\"internalType\\":\\"int256\\",\\"name\\":\\"temperature\\",\\"type\\":\\"int256\\"},{\\"internalType\\":\\"int256\\",\\"name\\":\\"minTemp\\",\\"type\\":\\"int256\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"windSpeed\\",\\"type\\":\\"uint256\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"windDeg\\",\\"type\\":\\"uint256\\"}],\\"name\\":\\"dto\\",\\"type\\":\\"tuple\\"}';
         return string.concat('{"url":"https://api.openweathermap.org/data/2.5/weather","httpMethod":"GET","headers":"{}","queryParams":"',queryParams,'","body":"{}","postProcessJq":"',postProcessJq,'","abiSignature":"',abiSignature,'"}');
-    }
-
-    function _getAgency() internal view returns (MinTempAgency) {
-        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
-        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
-        
-        address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
-        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
-        return MinTempAgency(agencyAddress);
     }
 }
 
@@ -206,15 +197,6 @@ contract ExecuteResolve is Script {
 
         console.log("ResolvePolicy transaction sent successfully for policy", policyId);
     }
-
-    function _getAgency() internal view returns (MinTempAgency) {
-        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
-        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
-        
-        address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
-        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
-        return MinTempAgency(agencyAddress);
-    }
 }
 
 
@@ -228,15 +210,6 @@ contract ExpirePolicy is Script {
         vm.stopBroadcast();
         console.log("Attempted to expire policy", policyId);
     }
-
-    function _getAgency() internal view returns (MinTempAgency) {
-        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
-        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
-        
-        address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
-        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
-        return MinTempAgency(agencyAddress);
-    }
 }
 
 //      forge script script/MinTemp.s.sol:RetireUnclaimedPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
@@ -249,14 +222,4 @@ contract RetireUnclaimedPolicy is Script {
         vm.stopBroadcast();
         console.log("Attempted to retire unclaimed policy", policyId);
     }
-
-    function _getAgency() internal view returns (MinTempAgency) {
-        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
-        require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
-        
-        address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
-        require(agencyAddress != address(0), "Failed to read a valid agency address from config file.");
-        return MinTempAgency(agencyAddress);
-    }
-
 }

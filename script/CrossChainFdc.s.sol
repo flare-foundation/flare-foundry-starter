@@ -22,21 +22,24 @@ string constant dirPath = "data/crossChainFdc/";
 
 using stdJson for string;
 
-// Deploys the persistent CORE INFRASTRUCTURE contracts.
+// Deploys the persistent CORE INFRASTRUCTURE contracts to the Target chain (adapat as needed and ensure the Relay is deployed).
 // Run this script only once per network.
-//      forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url $COSTON2_RPC_URL --broadcast
+//      forge script script/CrossChainFdc.s.sol:DeployInfrastructure --rpc-url $XRPLEVM_RPC_URL_TESTNET --broadcast
 contract DeployInfrastructure is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address governance = vm.addr(deployerPrivateKey);
 
-        address relayAddress = address(ContractRegistry.getRelay());
-        console.log("Dynamically retrieved Relay address:", relayAddress);
-        require(relayAddress != address(0), "Error: Could not retrieve Relay address from ContractRegistry.");
+        // On a non-Flare chain, the Relay address is a known, pre-deployed address.
+        // It must be provided in the .env file.
+        address relayAddress = vm.envAddress("RELAY_ADDRESS");
+        console.log("Using Relay address from .env file:", relayAddress);
+        require(relayAddress != address(0), "Error: RELAY_ADDRESS not set in .env or invalid.");
 
         vm.startBroadcast(deployerPrivateKey);
 
         AddressUpdater addressUpdater = new AddressUpdater(governance);
+        // The protocol ID must match the one used by the FDC instance on the Flare network (e.g., 200 for Coston2).
         FdcVerification fdcVerification = new FdcVerification(address(addressUpdater), 200);
         
         string[] memory names = new string[](2);
@@ -57,53 +60,26 @@ contract DeployInfrastructure is Script {
         vm.stopBroadcast();
 
         vm.createDir(dirPath, true);
-        vm.writeFile(string.concat(dirPath, "_addressUpdater.txt"), vm.toString(address(addressUpdater)));
-        vm.writeFile(string.concat(dirPath, "_fdcVerification.txt"), vm.toString(address(fdcVerification)));
-        vm.writeFile(string.concat(dirPath, "_relayAddress.txt"), vm.toString(relayAddress));
+        vm.writeFile(string.concat(dirPath, "addressUpdater.txt"), vm.toString(address(addressUpdater)));
+        vm.writeFile(string.concat(dirPath, "fdcVerification.txt"), vm.toString(address(fdcVerification)));
 
-        console.log("\n--- Infrastructure Deployment Complete ---");
+        console.log("\n--- Infrastructure Deployment Complete on Chain ID:", block.chainid, "---");
         console.log("Configuration saved to .txt files in:", dirPath);
         console.log("\n--- Contract Addresses ---");
         console.log("AddressUpdater:        ", address(addressUpdater));
         console.log("FdcVerification:       ", address(fdcVerification));
-        console.log("Relay (dynamic):       ", relayAddress);
     }
 }
 
-// Run this script after deploying the infrastructure, or any time you update the consumer contract.
-//      forge script script/CrossChainFdc.s.sol:DeployConsumerContract --rpc-url $COSTON2_RPC_URL --broadcast
-contract DeployConsumerContract is Script {
-    function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
-        // Read the FdcVerification address from the file created by the infrastructure deployment
-        string memory fdcVerificationPath = string.concat(dirPath, "_fdcVerification.txt");
-        require(vm.exists(fdcVerificationPath), "Infrastructure not deployed. Run DeployInfrastructure first.");
-        address fdcVerificationAddress = vm.parseAddress(vm.readFile(fdcVerificationPath));
-
-        vm.startBroadcast(deployerPrivateKey);
-        StarWarsCharacterListV3 characterList = new StarWarsCharacterListV3(fdcVerificationAddress);
-        vm.stopBroadcast();
-
-        // Write the new consumer contract's address to its own file
-        string memory consumerPath = string.concat(dirPath, "_starWarsCharacterList.txt");
-        vm.writeFile(consumerPath, vm.toString(address(characterList)));
-
-        console.log("\n--- Consumer Contract Deployment Complete ---");
-        console.log("StarWarsCharacterList deployed to:", address(characterList));
-        console.log("Configuration saved to:", consumerPath);
-    }
-}
-
-// STEP 1: Prepares the FDC request by calling the verifier API.
+// STEP 1: Prepares and submits the FDC request on the Flare Network.
 //    *** RUN THIS SCRIPT ON A FLARE NETWORK (e.g., Coston2) ***
-//      forge script script/CrossChainFdc.s.sol:PrepareRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi
-contract PrepareRequest is Script {
+//      forge script script/CrossChainFdc.s.sol:PrepareAndSubmitRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi
+contract PrepareAndSubmitRequest is Script {
     using Surl for *;
     string public constant SOURCE_NAME = "PublicWeb2";
 
     function run() external {
-        console.log("--- Step 1: Preparing FDC request ---");
+        console.log("--- Preparing and Submitting FDC request on Chain ID:", block.chainid, "---");
         vm.createDir(dirPath, true);
 
         string memory attestationType = FdcBase.toUtf8HexString(attestationTypeName);
@@ -114,54 +90,48 @@ contract PrepareRequest is Script {
         string memory abiSignature = '{\\"components\\":[{\\"internalType\\":\\"string\\",\\"name\\":\\"name\\",\\"type\\":\\"string\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"height\\",\\"type\\":\\"uint256\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"mass\\",\\"type\\":\\"uint256\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"numberOfMovies\\",\\"type\\":\\"uint256\\"},{\\"internalType\\":\\"uint256\\",\\"name\\":\\"apiUid\\",\\"type\\":\\"uint256\\"}],\\"name\\":\\"dto\\",\\"type\\":\\"tuple\\"}';
         string memory requestBody = string.concat('{"url":"',apiUrl,'","httpMethod":"GET","headers":"{}","queryParams":"{}","body":"{}","postProcessJq":"',postProcessJq,'","abiSignature":"',abiSignature,'"}');
 
+        // Prepare request off-chain
         (string[] memory headers, string memory body) = FdcBase.prepareAttestationRequest(attestationType, sourceId, requestBody);
-
         string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
         string memory url = string.concat(baseUrl, attestationTypeName, "/prepareRequest");
-        
         (, bytes memory data) = url.post(headers, body);
         FdcBase.AttestationResponse memory response = FdcBase.parseAttestationRequest(data);
         
-        FdcBase.writeToFile(dirPath, "_abiEncodedRequest.txt", StringsBase.toHexString(response.abiEncodedRequest), true);
-        console.log("Successfully prepared attestation request and saved to abiEncodedRequest.txt");
-    }
-}
-
-// STEP 2: Submits the prepared request to the FDC Hub on Flare.
-//    *** RUN THIS SCRIPT ON A FLARE NETWORK (e.g., Coston2) ***
-//      forge script script/CrossChainFdc.s.sol:SubmitRequest --rpc-url $COSTON2_RPC_URL --broadcast
-contract SubmitRequest is Script {
-    function run() external {
-        console.log("--- Step 2: Submitting FDC request ---");
-        string memory requestHex = vm.readFile(string.concat(dirPath, "_abiEncodedRequest.txt"));
-        bytes memory request = vm.parseBytes(requestHex);
-
-        uint256 timestamp = FdcBase.submitAttestationRequest(request);
+        // Submit request on-chain
+        uint256 timestamp = FdcBase.submitAttestationRequest(response.abiEncodedRequest);
         uint256 votingRoundId = FdcBase.calculateRoundId(timestamp);
 
-        FdcBase.writeToFile(dirPath, "_votingRoundId.txt", Strings.toString(votingRoundId), true);
-        console.log("Successfully submitted request. Voting Round ID:", votingRoundId);
+        // Write data to files for the next step
+        FdcBase.writeToFile(dirPath, "abiEncodedRequest.txt", StringsBase.toHexString(response.abiEncodedRequest), true);
+        FdcBase.writeToFile(dirPath, "votingRoundId.txt", Strings.toString(votingRoundId), true);
+        console.log("Successfully prepared and submitted request. Voting Round ID:", votingRoundId);
     }
 }
 
-// STEP 3: Waits, retrieves proof, and delivers it to the consumer contract.
-//    *** RUN THIS SCRIPT ON THE TARGET CHAIN (e.g., Coston2) ***
-//      forge script script/CrossChainFdc.s.sol:InteractWithConsumerContract --rpc-url $COSTON2_RPC_URL --broadcast --ffi
-contract InteractWithConsumerContract is Script {
+// STEP 2: Deploys the consumer, waits, retrieves proof, and delivers it on the target chain.
+//    *** RUN THIS SCRIPT ON THE TARGET CHAIN (e.g., XRPL Testnet) ***
+//      forge script script/CrossChainFdc.s.sol:DeliverProofToContract --rpc-url $XRPLEVM_RPC_URL_TESTNET --broadcast --ffi
+contract DeliverProofToContract is Script {
     function run() external {
-        console.log("--- Step 3: Executing proof delivery ---");
+        console.log("--- Delivering Proof on Chain ID:", block.chainid, "---");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        address characterListAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_starWarsCharacterList.txt")));
-        require(characterListAddress != address(0), "starWarsCharacterList address missing from config.");
+        // --- Deploy Consumer Contract ---
+        string memory fdcVerificationPath = string.concat(dirPath, "fdcVerification.txt");
+        require(vm.exists(fdcVerificationPath), "Infrastructure not deployed. Run DeployInfrastructure first.");
+        address fdcVerificationAddress = vm.parseAddress(vm.readFile(fdcVerificationPath));
 
-        StarWarsCharacterListV3 characterList = StarWarsCharacterListV3(characterListAddress);
-        console.log("Using StarWarsCharacterListV3 consumer at:", address(characterList));
+        vm.startBroadcast(deployerPrivateKey);
+        StarWarsCharacterListV3 characterList = new StarWarsCharacterListV3(fdcVerificationAddress);
+        vm.stopBroadcast();
+        console.log("StarWarsCharacterListV3 consumer deployed to:", address(characterList));
 
-        string memory requestHex = vm.readFile(string.concat(dirPath, "_abiEncodedRequest.txt"));
-        uint256 votingRoundId = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_votingRoundId.txt")));
+        // --- Retrieve Proof and Interact ---
+        string memory requestHex = vm.readFile(string.concat(dirPath, "abiEncodedRequest.txt"));
+        uint256 votingRoundId = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "votingRoundId.txt")));
         
-        IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
+        // The FdcVerification contract on the target chain holds the protocol ID for the source Flare network.
+        FdcVerification fdcVerification = FdcVerification(fdcVerificationAddress);
         uint8 protocolId = fdcVerification.fdcProtocolId();
         
         bytes memory proofData = FdcBase.retrieveProof(protocolId, requestHex, votingRoundId);

@@ -83,7 +83,6 @@ contract ActivateReaders is Script {
         
         string memory receiptPath = string(abi.encodePacked("broadcast/ProofOfReserves.s.sol/", vm.toString(chainId), "/run-latest.json"));
         string memory receiptJson = vm.readFile(receiptPath);
-        // We still need stdJson here just to parse the broadcast receipt, which is fine.
         string memory txHash = receiptJson.readString(".transactions[0].transactionHash");
         
         string memory txHashPath = string.concat(dirPath, "_txHash", Strings.toString(chainId), ".txt");
