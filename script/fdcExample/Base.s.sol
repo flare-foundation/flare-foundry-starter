@@ -278,16 +278,16 @@ library Base {
 
         bytes memory parsedProofData;
 
-        string[] memory jqCmd = new string[](3);
-        jqCmd[0] = "bash";
-        jqCmd[1] = "-c";
+        string[] memory jqCommand = new string[](3);
+        jqCommand[0] = "bash";
+        jqCommand[1] = "-c";
 
         (, bytes memory responseData) = postAttestationRequest(url, headers, body);
         string memory responseString = string(responseData);
 
         // Use vm.ffi with jq to safely check for the existence of the ".response_hex" key.
-        jqCmd[2] = string.concat("echo '", responseString, "' | jq -r '.response_hex // \"null\"'");
-        bytes memory validationResult = vm.ffi(jqCmd);
+        jqCommand[2] = string.concat("echo '", responseString, "' | jq -r '.response_hex // \"null\"'");
+        bytes memory validationResult = vm.ffi(jqCommand);
         
         // We succeed if the result is not "null" and the response has a reasonable length.
         if (keccak256(validationResult) != keccak256(bytes("null"))) {
