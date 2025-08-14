@@ -198,6 +198,6 @@ contract MinTempAgency {
     function isJsonApiProofValid(
         IWeb2Json.Proof calldata _proof
     ) private view returns (bool) {
-        return ContractRegistry.getFdcVerification().verifyJsonApi(_proof);
+        return ContractRegistry.getFdcVerification().verifyWeb2Json(_proof);
     }
 }
