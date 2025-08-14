@@ -7,10 +7,10 @@ integrity = "17e24d71e2995a505f428ff1e4b514723175d8c6f7b84db6a96cfa31bc73fe23"
 
 [[dependencies]]
 name = "flare-periphery"
-version = "0.1.35"
-url = "https://soldeer-revisions.s3.amazonaws.com/flare-periphery/0_1_35_08-08-2025_09:48:32_soldeer-flare-periphery.zip"
-checksum = "4f801b6a93c1a15ad3350f428fab62350826b2121eddcfcef8bffe170717e8ee"
-integrity = "c9b34adf62fed66644aa4af57ae9903929baabb2749f3ba3b9c88d0e601e0afa"
+version = "0.1.36"
+url = "https://soldeer-revisions.s3.amazonaws.com/flare-periphery/0_1_36_12-08-2025_11:31:39_soldeer-flare-periphery.zip"
+checksum = "5445bcf8e2f830e3ed5b50efe73654cfee8be796390fea6266787da9767cf4e9"
+integrity = "3469ca25ef95ad81150a4a8e56f88bece99f38d0951118b32696a0142b27add8"
 
 [[dependencies]]
 name = "forge-std"
