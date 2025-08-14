@@ -10,7 +10,8 @@ import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol
 import {Base as FdcBase} from "script/fdcExample/Base.s.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 
-// Run with command
+
+// Run with commands
 // forge script script/fassets/FAssetsExecuteMinting.s.sol:ExecuteMinting --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract ExecuteMinting is Script {

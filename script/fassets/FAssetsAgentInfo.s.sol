@@ -9,7 +9,7 @@ import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol
 import {AvailableAgentInfo} from "flare-periphery/src/coston2/data/AvailableAgentInfo.sol";
 
 // Run with command
-// forge script script/fassets/FAssetsAgentInfo.s.sol:AgentInfo --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast
+// forge script script/fassets/FAssetsAgentInfo.s.sol:AgentInfo --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
 
 contract AgentInfo is Script {
     FassetsAgentInfo public fassetsAgentInfo;

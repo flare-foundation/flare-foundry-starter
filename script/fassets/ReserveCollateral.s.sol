@@ -8,8 +8,9 @@ import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol
 import {AvailableAgentInfo} from "flare-periphery/src/coston2/data/AvailableAgentInfo.sol";
 import {AgentInfo} from "flare-periphery/src/coston2/data/AgentInfo.sol";
 
+
 // Run with command
-// forge script script/fassets/ReserveCollateral.s.sol:ReserveCollateral --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast
+// forge script script/fassets/ReserveCollateral.s.sol:ReserveCollateral --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract ReserveCollateral is Script {
     // Configuration constants

@@ -9,7 +9,7 @@ import {IAssetManager} from "flare-periphery/src/coston2/IAssetManager.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 
 // Run with command
-// forge script script/fassets/FAssetsRedeem.s.sol:Redeem --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast
+// forge script script/fassets/FAssetsRedeem.s.sol:Redeem --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
 
 contract Redeem is Script {
     FAssetsRedeem public fAssetsRedeem;
