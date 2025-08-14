@@ -60,10 +60,6 @@ contract ReserveCollateral is Script {
         // Get asset minting decimals for calculations
         uint256 decimals = assetManager.assetMintingDecimals();
         console.log("Asset minting decimals:", decimals);
-
-        // Note: In Foundry scripts, we can't easily parse events from the transaction receipt
-        // The event parsing would need to be done separately or through other means
-        console.log("To get collateral reservation info, you'll need to query the contract directly");
     }
 
     /**
@@ -130,14 +126,5 @@ contract ReserveCollateral is Script {
 
         console.log("No suitable agent with NORMAL status found");
         return address(0);
-    }
-}
-
-// Optional: Separate contract for verification
-contract Verify is Script {
-    function run() pure external {
-        // This can be used to verify the contract after deployment
-        // The verification command should be run separately with --verify flag
-        console.log("Contract verification should be done with --verify flag");
     }
 }

@@ -9,7 +9,7 @@ import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol
 import {IAssetManager} from "flare-periphery/src/coston2/IAssetManager.sol";
 
 // Run with command
-// forge script script/fassets/FAssetsSwapAndRedeem.s.sol:SwapAndRedeem --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL
+// forge script script/fassets/FAssetsSwapAndRedeem.s.sol:SwapAndRedeem --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast
 
 contract SwapAndRedeem is Script {
     FAssetsSwapAndRedeem public swapAndRedeemContract;
@@ -80,14 +80,5 @@ contract SwapAndRedeem is Script {
         }
 
         vm.stopBroadcast();
-    }
-}
-
-// Optional: Separate contract for verification
-contract Verify is Script {
-    function run() pure external {
-        // This can be used to verify the contract after deployment
-        // The verification command should be run separately with --verify flag
-        console.log("Contract verification should be done with --verify flag");
     }
 }

@@ -9,7 +9,7 @@ import {IAssetManager} from "flare-periphery/src/coston2/IAssetManager.sol";
 import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
 
 // Run with command
-// forge script script/fassets/FAssetsRedeem.s.sol:Redeem --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL
+// forge script script/fassets/FAssetsRedeem.s.sol:Redeem --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast
 
 contract Redeem is Script {
     FAssetsRedeem public fAssetsRedeem;
@@ -52,14 +52,5 @@ contract Redeem is Script {
         console.log("Redeem transaction completed. Redeemed amount UBA:", redeemedAmountUBA);
 
         vm.stopBroadcast();
-    }
-}
-
-// Optional: Separate contract for verification
-contract Verify is Script {
-    function run() external {
-        // This can be used to verify the contract after deployment
-        // The verification command should be run separately with --verify flag
-        console.log("Contract verification should be done with --verify flag");
     }
 }
