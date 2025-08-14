@@ -146,7 +146,7 @@ contract SubmitAttestationRequest is Script {
 }
 
 // Run with command
-//      forge script script/fdcExample/ReferencedPaymentNonexistence.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/ReferencedPaymentNonexistence.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast--verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;

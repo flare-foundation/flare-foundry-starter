@@ -25,7 +25,7 @@ contract PrepareAttestationRequest is Script {
     string public apiUrl = "https://swapi.info/api/people/3";
     string public httpMethod = "GET";
     // Defaults to "Content-Type": "application/json"
-    string public headers = '{\\"Content-Type\\":\\"text/plain\\"}';
+    string public headers = "";
     string public queryParams = "{}";
     string public body = "{}";
     string public postProcessJq =
@@ -225,7 +225,7 @@ contract RetrieveDataAndProof is Script {
     }
 }
 
-// forge script script/fdcExample/Web2Json.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --ffi
+// forge script script/fdcExample/Web2Json.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
 
 contract DeployContract is Script {
     function run() external {
