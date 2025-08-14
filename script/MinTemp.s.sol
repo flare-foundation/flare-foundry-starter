@@ -21,6 +21,8 @@ Vm constant vm = Vm(VM_ADDRESS);
 string constant dirPath = "data/weatherInsurance/";
 string constant attestationTypeName = "Web2Json";
 
+// TODO:(Nik) The file handling in this script should be changed so that data gets saved to data/MinTemp_<variableName>.txt
+
 // helper to read address from file
 function _getAgency() view returns (MinTempAgency) {
         string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
@@ -31,7 +33,7 @@ function _getAgency() view returns (MinTempAgency) {
         return MinTempAgency(agencyAddress);
     }
 
-//      forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify
+//      forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --verifier-url $COSTON2_FLARE_EXPLORER_API --broadcast --verify --ffi
 contract DeployAgency is Script {
     function run() external {
         vm.createDir(dirPath, true);
@@ -47,7 +49,7 @@ contract DeployAgency is Script {
     }
 }
 
-//      forge script script/MinTemp.s.sol:CreatePolicy --rpc-url $COSTON2_RPC_URL --broadcast --ffi
+//      forge script script/MinTemp.s.sol:CreatePolicy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 contract CreatePolicy is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -91,7 +93,7 @@ contract CreatePolicy is Script {
     
 }
 
-//      forge script script/MinTemp.s.sol:ClaimPolicy --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
+//      forge script script/MinTemp.s.sol:ClaimPolicy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --sig "run(uint256)" <POLICY_ID>
 contract ClaimPolicy is Script {
     function run(uint256 policyId) external {
         uint256 insurerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -118,8 +120,13 @@ contract PrepareResolveRequest is Script {
 
         bytes memory abiEncodedRequest = prepareFdcRequest(policy.latitude, policy.longitude);
         
-        FdcBase.writeToFile(dirPath, "_resolve_request.txt", StringsBase.toHexString(abiEncodedRequest), true);
-        
+        FdcBase.writeToFile(
+            dirPath,
+            "_resolve_request",
+            StringsBase.toHexString(abiEncodedRequest),
+            true
+        );
+
         console.log("Successfully prepared attestation request and saved to _resolve_request.txt");
     }
 
@@ -160,8 +167,13 @@ contract SubmitResolveRequest is Script {
         uint256 submissionTimestamp = FdcBase.submitAttestationRequest(abiEncodedRequest);
         uint256 submissionRoundId = FdcBase.calculateRoundId(submissionTimestamp);
         
-        FdcBase.writeToFile(dirPath, "_resolve_roundId.txt", Strings.toString(submissionRoundId), true);
-        
+        FdcBase.writeToFile(
+            dirPath,
+            "_resolve_roundId",
+            Strings.toString(submissionRoundId),
+            true
+        );
+
         console.log("Request submitted successfully in Voting Round ID:", submissionRoundId);
     }
 }
