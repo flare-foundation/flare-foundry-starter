@@ -25,7 +25,7 @@ string constant attestationTypeName = "Web2Json";
 
 // helper to read address from file
 function _getAgency() view returns (MinTempAgency) {
-        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
+        string memory filePath = string.concat(dirPath, "MinTemp_agencyAddress.txt");
         require(vm.exists(filePath), "Config file not found. Please run DeployAgency script first.");
         
         address agencyAddress = vm.parseAddress(vm.readFile(filePath)); 
@@ -43,7 +43,7 @@ contract DeployAgency is Script {
         vm.stopBroadcast();
         console.log("MinTempAgency deployed to:", address(agency));
         
-        string memory filePath = string.concat(dirPath, "_agencyAddress.txt");
+        string memory filePath = string.concat(dirPath, "MinTemp_agencyAddress.txt");
         vm.writeFile(filePath, vm.toString(address(agency)));
         console.log("MinTempAgency address saved to:", filePath);   
     }
@@ -122,12 +122,12 @@ contract PrepareResolveRequest is Script {
         
         FdcBase.writeToFile(
             dirPath,
-            "_resolve_request",
+            "MinTemp_resolveRequest",
             StringsBase.toHexString(abiEncodedRequest),
             true
         );
 
-        console.log("Successfully prepared attestation request and saved to _resolve_request.txt");
+        console.log("Successfully prepared attestation request and saved to MinTemp_resolveRequest.txt");
     }
 
     function prepareFdcRequest(int256 lat, int256 lon) internal returns (bytes memory) {
@@ -161,7 +161,7 @@ contract SubmitResolveRequest is Script {
     function run() external {
         console.log("--- Step 2: Submitting resolve request to FDC ---");
         
-        string memory requestHex = vm.readFile(string.concat(dirPath, "_resolve_request.txt"));
+        string memory requestHex = vm.readFile(string.concat(dirPath, "MinTemp_resolve_request.txt"));
         bytes memory abiEncodedRequest = vm.parseBytes(requestHex);
 
         uint256 submissionTimestamp = FdcBase.submitAttestationRequest(abiEncodedRequest);
@@ -169,7 +169,7 @@ contract SubmitResolveRequest is Script {
         
         FdcBase.writeToFile(
             dirPath,
-            "_resolve_roundId",
+            "MinTemp_resolveRoundId",
             Strings.toString(submissionRoundId),
             true
         );
@@ -184,8 +184,8 @@ contract ExecuteResolve is Script {
     function run(uint256 policyId) external {
         console.log("--- Step 3: Executing resolution for policy", policyId, "---");
         
-        string memory requestHex = vm.readFile(string.concat(dirPath, "_resolve_request.txt"));
-        string memory roundIdStr = vm.readFile(string.concat(dirPath, "_resolve_roundId.txt"));
+        string memory requestHex = vm.readFile(string.concat(dirPath, "MinTemp_resolveRequest.txt"));
+        string memory roundIdStr = vm.readFile(string.concat(dirPath, "MinTemp_resolveRoundId.txt"));
         uint256 submissionRoundId = FdcBase.stringToUint(roundIdStr);
 
         IFdcVerification fdcVerification = ContractRegistry.getFdcVerification();
