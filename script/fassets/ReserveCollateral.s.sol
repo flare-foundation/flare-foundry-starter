@@ -14,8 +14,8 @@ import {AgentInfo} from "flare-periphery/src/coston2/data/AgentInfo.sol";
 
 contract ReserveCollateral is Script {
     // Configuration constants
-    uint256 constant LOTS_TO_MINT = 1;
-    address constant ZERO_ADDRESS = address(0);
+    uint256 constant lotsToMint = 1;
+    address constant zeroAddress = address(0);
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -26,7 +26,7 @@ contract ReserveCollateral is Script {
         console.log("Asset manager address:", address(assetManager));
 
         // Find the best agent with enough free collateral lots
-        address agentVaultAddress = findBestAgent(assetManager, LOTS_TO_MINT);
+        address agentVaultAddress = findBestAgent(assetManager, lotsToMint);
         require(agentVaultAddress != address(0), "No suitable agent found with enough free collateral lots");
         console.log("Selected agent vault address:", agentVaultAddress);
 
@@ -36,21 +36,21 @@ contract ReserveCollateral is Script {
         console.log("Agent status:", uint256(agentInfo.status));
 
         // Get the collateral reservation fee according to the number of lots to reserve
-        uint256 collateralReservationFee = assetManager.collateralReservationFee(LOTS_TO_MINT);
+        uint256 collateralReservationFee = assetManager.collateralReservationFee(lotsToMint);
         console.log("Collateral reservation fee:", collateralReservationFee);
 
         console.log("Agent vault address:", agentVaultAddress);
-        console.log("Lots to mint:", LOTS_TO_MINT);
+        console.log("Lots to mint:", lotsToMint);
         console.log("Agent fee BIPS:", agentInfo.feeBIPS);
-        console.log("Zero address:", ZERO_ADDRESS);
+        console.log("Zero address:", zeroAddress);
         console.log("Collateral reservation fee:", collateralReservationFee);
 
         // Reserve collateral
         assetManager.reserveCollateral{value: collateralReservationFee}(
             agentVaultAddress,
-            LOTS_TO_MINT,
+            lotsToMint,
             agentInfo.feeBIPS,
-            payable(ZERO_ADDRESS) // Not using the executor
+            payable(zeroAddress) // Not using the executor
         );
 
         vm.stopBroadcast();

@@ -15,8 +15,8 @@ contract SwapAndRedeem is Script {
     FAssetsSwapAndRedeem public swapAndRedeemContract;
     
     // Configuration constants
-    uint256 constant LOTS_TO_REDEEM = 1;
-    string constant UNDERLYING_ADDRESS = "rSHYuiEvsYsKR8uUHhBTuGP5zjRcGt4nm";
+    uint256 constant lotsToRedeem = 1;
+    string constant underlyingAddress = "rSHYuiEvsYsKR8uUHhBTuGP5zjRcGt4nm";
 
     // BlazeSwap router address on Flare Testnet Coston2 network
     address constant SWAP_ROUTER_ADDRESS = 0x8D29b61C41CF318d15d031BE2928F79630e068e6;
@@ -40,7 +40,7 @@ contract SwapAndRedeem is Script {
         console.log("FAssetsSwapAndRedeem deployed to:", address(swapAndRedeemContract));
 
         // Calculate the amounts needed for redemption
-        (uint256 amountIn, uint256 amountOut) = swapAndRedeemContract.calculateRedemptionAmountIn(LOTS_TO_REDEEM);
+        (uint256 amountIn, uint256 amountOut) = swapAndRedeemContract.calculateRedemptionAmountIn(lotsToRedeem);
         console.log("Amount of tokens out (FXRP):", amountOut);
         console.log("Amount of tokens in (WCFLR):", amountIn);
 
@@ -60,7 +60,7 @@ contract SwapAndRedeem is Script {
             uint256[] memory amountsSent,
             uint256[] memory amountsRecv,
             uint256 redeemedAmountUBA
-        ) = swapAndRedeemContract.swapAndRedeem(LOTS_TO_REDEEM, UNDERLYING_ADDRESS);
+        ) = swapAndRedeemContract.swapAndRedeem(lotsToRedeem, underlyingAddress);
         
         console.log("Swap and redeem completed!");
         console.log("Amount out (FXRP):", amountOutResult);

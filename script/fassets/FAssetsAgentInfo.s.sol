@@ -33,21 +33,22 @@ contract AgentInfo is Script {
         console.log("Total agents available:", totalLength);
         console.log("Agents retrieved:", agents.length);
         
-        if (agents.length > 0) {
-            address agentAddress = agents[0].ownerManagementAddress;
-            console.log("Agent management address:", agentAddress);
-
-            // Call getSettings function
-            string memory agentName = fassetsAgentInfo.getAgentName(agentAddress);
-            console.log("Agent name:", agentName);
-
-            string memory agentDescription = fassetsAgentInfo.getAgentDescription(agentAddress);
-            console.log("Agent description:", agentDescription);
-
-            string memory agentIconUrl = fassetsAgentInfo.getAgentIconUrl(agentAddress);
-            console.log("Agent icon URL:", agentIconUrl);
-        } else {
+        if (agents.length <= 0) {
             console.log("No agents found");
+            return;
         }
+        
+        address agentAddress = agents[0].ownerManagementAddress;
+        console.log("Agent management address:", agentAddress);
+
+        // Call getSettings function
+        string memory agentName = fassetsAgentInfo.getAgentName(agentAddress);
+        console.log("Agent name:", agentName);
+
+        string memory agentDescription = fassetsAgentInfo.getAgentDescription(agentAddress);
+        console.log("Agent description:", agentDescription);
+
+        string memory agentIconUrl = fassetsAgentInfo.getAgentIconUrl(agentAddress);
+        console.log("Agent icon URL:", agentIconUrl);
     }
 }

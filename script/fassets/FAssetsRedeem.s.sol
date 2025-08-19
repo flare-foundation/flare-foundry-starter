@@ -15,8 +15,8 @@ contract Redeem is Script {
     FAssetsRedeem public fAssetsRedeem;
     
     // Configuration constants
-    uint256 constant LOTS_TO_REDEEM = 1;
-    string constant UNDERLYING_ADDRESS = "rSHYuiEvsYsKR8uUHhBTuGP5zjRcGt4nm";
+    uint256 constant lotsToRedeem = 1;
+    string constant underlyingAddress = "rSHYuiEvsYsKR8uUHhBTuGP5zjRcGt4nm";
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -32,7 +32,7 @@ contract Redeem is Script {
         console.log("Asset decimals:", decimals);
 
         // Calculate the amount to redeem according to the lot size and the number of lots to redeem
-        uint256 amountToRedeem = lotSize * LOTS_TO_REDEEM;
+        uint256 amountToRedeem = lotSize * lotsToRedeem;
         console.log("Required FXRP amount:", amountToRedeem);
         console.log("Required amount in base units:", amountToRedeem);
 
@@ -48,7 +48,7 @@ contract Redeem is Script {
 
         // Call redeem function
         console.log("Calling redeem function...");
-        uint256 redeemedAmountUBA = fAssetsRedeem.redeem(LOTS_TO_REDEEM, UNDERLYING_ADDRESS);
+        uint256 redeemedAmountUBA = fAssetsRedeem.redeem(lotsToRedeem, underlyingAddress);
         console.log("Redeem transaction completed. Redeemed amount UBA:", redeemedAmountUBA);
 
         vm.stopBroadcast();

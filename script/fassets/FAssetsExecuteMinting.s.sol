@@ -9,6 +9,7 @@ import {IPayment} from "flare-periphery/src/coston2/IPayment.sol";
 import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
 import {Base as FdcBase} from "script/fdcExample/Base.s.sol";
 import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
+import {Base as StringsBase} from "../../src/utils/fdcStrings/Base.sol";
 
 
 // Run with commands
@@ -16,35 +17,18 @@ import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
 
 contract ExecuteMinting is Script {
     // Configuration constants
-    uint256 constant COLLATERAL_RESERVATION_ID = 24360013;
-    uint256 constant TARGET_ROUND_ID = 1074736;
+    uint256 constant collateralReservationId = 24360013;
+    uint256 constant targetRoundId = 1074736;
     
     // FDC request data
-    string constant ATTESTATION_TYPE = "Payment";
-    string constant SOURCE_ID = "testXRP";
-    string constant URL_TYPE = "xrp";
+    string constant attestationType = "Payment";
+    string constant sourceId = "testXRP";
+    string constant urlType = "xrp";
     
     // Transaction data
-    string constant TRANSACTION_ID = "85B182F7B250BF8CB23531ECA5B508C0F66E8B7AEF7C8EE0CF851A7B2F8A9EB1";
-    string constant IN_UTXO = "0";
-    string constant UTXO = "0";
-
-    /**
-     * @dev Convert bytes to hex string
-     * @param data The bytes to convert
-     * @return The hex string representation
-     */
-    function toHexString(bytes memory data) internal pure returns (string memory) {
-        bytes memory alphabet = "0123456789abcdef";
-        bytes memory str = new bytes(2 + data.length * 2);
-        str[0] = "0";
-        str[1] = "x";
-        for (uint256 i = 0; i < data.length; i++) {
-            str[2 + i * 2] = alphabet[uint8(data[i] >> 4)];
-            str[3 + i * 2] = alphabet[uint8(data[i] & 0x0f)];
-        }
-        return string(str);
-    }
+    string constant transactionId = "85B182F7B250BF8CB23531ECA5B508C0F66E8B7AEF7C8EE0CF851A7B2F8A9EB1";
+    string constant inUtxo = "0";
+    string constant utxo = "0";
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -62,15 +46,15 @@ contract ExecuteMinting is Script {
         
         // Prepare FDC request
         string memory requestBody = string.concat(
-            '{"transactionId":"', TRANSACTION_ID, '","inUtxo":"', IN_UTXO, '","utxo":"', UTXO, '"}'
+            '{"transactionId":"', transactionId, '","inUtxo":"', inUtxo, '","utxo":"', utxo, '"}'
         );
         
-        string memory url = string.concat(verifierUrl, "verifier/", URL_TYPE, "/Payment/prepareRequest");
+        string memory url = string.concat(verifierUrl, "verifier/", urlType, "/Payment/prepareRequest");
         
         bytes memory abiEncodedRequest = FdcBase.prepareFdcRequest(
             url,
-            ATTESTATION_TYPE,
-            SOURCE_ID,
+            attestationType,
+            sourceId,
             requestBody
         );
         
@@ -83,8 +67,8 @@ contract ExecuteMinting is Script {
         
         bytes memory proofData = FdcBase.retrieveProof(
             protocolId,
-            toHexString(abiEncodedRequest),
-            TARGET_ROUND_ID
+            StringsBase.toHexString(abiEncodedRequest),
+            targetRoundId
         );
         
         console.log("Proof retrieved successfully");
@@ -99,10 +83,10 @@ contract ExecuteMinting is Script {
         console.log("Asset manager address:", address(assetManager));
 
         // Execute minting
-        console.log("Executing minting with collateral reservation ID:", COLLATERAL_RESERVATION_ID);
+        console.log("Executing minting with collateral reservation ID:", collateralReservationId);
         vm.startBroadcast(deployerPrivateKey);
         
-        assetManager.executeMinting(finalProof, COLLATERAL_RESERVATION_ID);
+        assetManager.executeMinting(finalProof, collateralReservationId);
         
         vm.stopBroadcast();
         
