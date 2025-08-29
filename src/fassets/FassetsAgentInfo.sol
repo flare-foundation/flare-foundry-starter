@@ -42,5 +42,53 @@ contract FassetsAgentInfo {
     function getAgentIconUrl(address _managementAddress) external view returns (string memory) {
         return getAgentOwnerRegistry().getAgentIconUrl(_managementAddress);
     }
+
+    /**
+     * @dev Get agent terms of use URL by management address
+     * @param _managementAddress The management address of the agent
+     * @return The agent's terms of use URL
+     */
+    function getAgentTermsOfUseUrl(
+        address _managementAddress
+    ) external view returns (string memory) {
+        return
+            getAgentOwnerRegistry().getAgentTermsOfUseUrl(_managementAddress);
+    }
+
+    /**
+     * @dev Get agent details by management address
+     * @param _managementAddress The management address of the agent
+     * @return The agent's details (name, description, icon URL, terms of use URL)
+     */
+    function getAgentDetails(
+        address _managementAddress
+    )
+        external
+        view
+        returns (string memory, string memory, string memory, string memory)
+    {
+        IAssetManager assetManager = ContractRegistry.getAssetManagerFXRP();
+        address agentOwnerRegistryAddress = assetManager
+            .getSettings()
+            .agentOwnerRegistry;
+        IAgentOwnerRegistry agentOwnerRegistry = IAgentOwnerRegistry(
+            agentOwnerRegistryAddress
+        );
+
+        string memory name = agentOwnerRegistry.getAgentName(
+            _managementAddress
+        );
+        string memory description = agentOwnerRegistry.getAgentDescription(
+            _managementAddress
+        );
+        string memory iconUrl = agentOwnerRegistry.getAgentIconUrl(
+            _managementAddress
+        );
+        string memory termsOfUseUrl = agentOwnerRegistry.getAgentTermsOfUseUrl(
+            _managementAddress
+        );
+
+        return (name, description, iconUrl, termsOfUseUrl);
+    }
 }
 

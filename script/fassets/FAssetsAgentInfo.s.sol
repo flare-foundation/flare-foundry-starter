@@ -50,5 +50,17 @@ contract AgentInfo is Script {
 
         string memory agentIconUrl = fassetsAgentInfo.getAgentIconUrl(agentAddress);
         console.log("Agent icon URL:", agentIconUrl);
+
+        string memory agentTermsOfUseUrl = fassetsAgentInfo.getAgentTermsOfUseUrl(agentAddress);
+        console.log("Agent terms of use URL:", agentTermsOfUseUrl);
+
+        console.log("--------------------------------");
+
+        (string memory name, string memory description, string memory iconUrl, string memory termsOfUseUrl) = fassetsAgentInfo.getAgentDetails(agentAddress);
+        console.log("Agent name:", name);
+        console.log("Agent description:", description);
+        console.log("Agent icon URL:", iconUrl);
+        console.log("Agent terms of use URL:", termsOfUseUrl);
     }
+    
 }
