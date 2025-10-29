@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Script, console} from "forge-std/Script.sol";
-import {Surl} from "surl/Surl.sol";
-import {Base as FdcBase} from "../script/fdcExample/Base.s.sol";
-import {Base as StringsBase} from "../src/utils/fdcStrings/Base.sol";
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
-import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
-import {MyStablecoin} from "../src/proofOfReserves/Token.sol";
-import {TokenStateReader} from "../src/proofOfReserves/TokenStateReader.sol";
-import {ProofOfReserves} from "../src/proofOfReserves/ProofOfReserves.sol";
-import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
-import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
-import {stdJson} from "forge-std/StdJson.sol";
+import { Script } from "forge-std/Script.sol";
+import { Base as FdcBase } from "../script/fdcExample/Base.s.sol";
+import { Base as StringsBase } from "../src/utils/fdcStrings/Base.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { IWeb2Json } from "flare-periphery/src/coston2/IWeb2Json.sol";
+import { IEVMTransaction } from "flare-periphery/src/coston2/IEVMTransaction.sol";
+import { MyStablecoin } from "../src/proofOfReserves/Token.sol";
+import { TokenStateReader } from "../src/proofOfReserves/TokenStateReader.sol";
+import { ProofOfReserves } from "../src/proofOfReserves/ProofOfReserves.sol";
+import { ContractRegistry } from "flare-periphery/src/coston2/ContractRegistry.sol";
+import { IFdcVerification } from "flare-periphery/src/coston2/IFdcVerification.sol";
+import { stdJson } from "forge-std/StdJson.sol";
 
 // stdjson
 using stdJson for string;
@@ -38,23 +37,18 @@ contract Deploy is Script {
 
         string memory tokenPath = string.concat(dirPath, "_token", Strings.toString(chainId), ".txt");
         string memory readerPath = string.concat(dirPath, "_reader", Strings.toString(chainId), ".txt");
-        
+
         vm.writeFile(tokenPath, vm.toString(address(token)));
         vm.writeFile(readerPath, vm.toString(address(reader)));
 
-        if (chainId == 114) { // Coston2
+        if (chainId == 114) {
+            // Coston2
             ProofOfReserves proofOfReserves = new ProofOfReserves();
             string memory porPath = string.concat(dirPath, "_proofOfReserves", Strings.toString(chainId), ".txt");
             vm.writeFile(porPath, vm.toString(address(proofOfReserves)));
-            console.log("ProofOfReserves deployed to:", address(proofOfReserves));
         }
 
         vm.stopBroadcast();
-        
-        console.log("--- Deployment Results for Chain ID:", chainId, "---");
-        console.log("MyStablecoin deployed to:", address(token));
-        console.log("TokenStateReader deployed to:", address(reader));
-        console.log("Configuration saved to .txt files in:", dirPath);
     }
 }
 
@@ -65,7 +59,7 @@ contract ActivateReaders is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         uint256 chainId = block.chainid;
-        
+
         // Read addresses from .txt files
         string memory tokenPath = string.concat(dirPath, "_token", Strings.toString(chainId), ".txt");
         string memory readerPath = string.concat(dirPath, "_reader", Strings.toString(chainId), ".txt");
@@ -76,20 +70,19 @@ contract ActivateReaders is Script {
 
         TokenStateReader reader = TokenStateReader(readerAddress);
         MyStablecoin token = MyStablecoin(tokenAddress);
-        
+
         vm.startBroadcast(deployerPrivateKey);
         reader.broadcastTokenSupply(token);
         vm.stopBroadcast();
-        
-        string memory receiptPath = string(abi.encodePacked("broadcast/ProofOfReserves.s.sol/", vm.toString(chainId), "/run-latest.json"));
+
+        string memory receiptPath = string(
+            abi.encodePacked("broadcast/ProofOfReserves.s.sol/", vm.toString(chainId), "/run-latest.json")
+        );
         string memory receiptJson = vm.readFile(receiptPath);
         string memory txHash = receiptJson.readString(".transactions[0].transactionHash");
-        
+
         string memory txHashPath = string.concat(dirPath, "_txHash", Strings.toString(chainId), ".txt");
         vm.writeFile(txHashPath, txHash);
-
-        console.log("Reader activated for token:", address(token), "on chain:", chainId);
-        console.log("Transaction hash", txHash, "saved to file:", txHashPath);
     }
 }
 
@@ -102,33 +95,69 @@ contract PrepareRequests is Script {
         // Read from both chain-specific config files
         string memory txHashCoston = vm.readFile(string.concat(dirPath, "_txHash_16.txt"));
         string memory txHashCoston2 = vm.readFile(string.concat(dirPath, "_txHash_114.txt"));
-        require(bytes(txHashCoston).length > 0 && bytes(txHashCoston2).length > 0, "Transaction hashes not found in .txt configs. Run ActivateReaders on both chains first.");
+        require(
+            bytes(txHashCoston).length > 0 && bytes(txHashCoston2).length > 0,
+            "Transaction hashes not found in .txt configs. Run ActivateReaders on both chains first."
+        );
 
         bytes memory web2JsonRequest = prepareWeb2JsonRequest();
         FdcBase.writeToFile(dirPath, "_Web2Json_request.txt", StringsBase.toHexString(web2JsonRequest), true);
-        console.log("Web2Json request prepared and saved.");
 
         bytes memory evmCostonRequest = prepareEvmTransactionRequest("testSGB", "sgb", txHashCoston);
-        FdcBase.writeToFile(dirPath, "EVMTransaction_Coston_request.txt", StringsBase.toHexString(evmCostonRequest), true);
-        console.log("Coston EVM Tx request prepared and saved.");
+        FdcBase.writeToFile(
+            dirPath,
+            "EVMTransaction_Coston_request.txt",
+            StringsBase.toHexString(evmCostonRequest),
+            true
+        );
 
         bytes memory evmCoston2Request = prepareEvmTransactionRequest("testFLR", "flr", txHashCoston2);
-        FdcBase.writeToFile(dirPath, "EVMTransaction_Coston2_request.txt", StringsBase.toHexString(evmCoston2Request), true);
-        console.log("Coston2 EVM Tx request prepared and saved.");
+        FdcBase.writeToFile(
+            dirPath,
+            "EVMTransaction_Coston2_request.txt",
+            StringsBase.toHexString(evmCoston2Request),
+            true
+        );
     }
 
     function prepareWeb2JsonRequest() internal returns (bytes memory) {
         string memory apiUrl = "https://api.htdigitalassets.com/alm-stablecoin-db/metrics/current_reserves_amount";
-        string memory postProcessJqValue = '{\\"reserves\\": (.value | gsub(\\",\\";\\"\\") | split(\\".\\")[0] | tonumber)}';
-        string memory abiSignatureValue = '{\\"components\\":[{\\"internalType\\":\\"uint256\\",\\"name\\":\\"reserves\\",\\"type\\":\\"uint256\\"}],\\"internalType\\":\\"struct DataTransportObject\\",\\"name\\":\\"dto\\",\\"type\\":\\"tuple\\"}';
-        string memory requestBody = string.concat('{"url":"',apiUrl,'","httpMethod":"GET","headers":"{\\"Content-Type\\":\\"application/json\\"}","queryParams":"{}","body":"{}","postProcessJq":"',postProcessJqValue,'","abiSignature":"',abiSignatureValue,'"}');
+        string
+            // solhint-disable-next-line max-line-length
+            memory postProcessJqValue = "{\\'reserves\\': (.value | gsub(\\',\\';\\'\\') | split(\\'.\\')[0] | tonumber)}";
+        string
+            // solhint-disable-next-line max-line-length
+            memory abiSignatureValue = "{\\'components\\':[{\\'internalType\\':\\'uint256\\',\\'name\\':\\'reserves\\',\\'type\\':\\'uint256\\'}],\\'internalType\\':\\'struct DataTransportObject\\',\\'name\\':\\'dto\\',\\'type\\':\\'tuple\\'}";
+        string memory requestBody = string.concat(
+            "{'url':'",
+            apiUrl,
+            "','httpMethod':'GET','headers':'{\\'Content-Type\\':\\'application/json\\'}',",
+            "'queryParams':'{}','body':'{}','postProcessJq':'",
+            postProcessJqValue,
+            "','abiSignature':'",
+            abiSignatureValue,
+            "'}"
+        );
         string memory url = string.concat(vm.envString("WEB2JSON_VERIFIER_URL_TESTNET"), "Web2Json/prepareRequest");
         return FdcBase.prepareFdcRequest(url, "Web2Json", "PublicWeb2", requestBody);
     }
 
-    function prepareEvmTransactionRequest(string memory sourceId, string memory urlTypeBase, string memory txHash) internal returns (bytes memory) {
-        string memory requestBody = string.concat('{"transactionHash":"', txHash, '","requiredConfirmations":"1","provideInput":true,"listEvents":true,"logIndices":[]}');
-        string memory url = string.concat(vm.envString("VERIFIER_URL_TESTNET"), "verifier/", urlTypeBase, "/EVMTransaction/prepareRequest");
+    function prepareEvmTransactionRequest(
+        string memory sourceId,
+        string memory urlTypeBase,
+        string memory txHash
+    ) internal returns (bytes memory) {
+        string memory requestBody = string.concat(
+            "{'transactionHash':'",
+            txHash,
+            "','requiredConfirmations':'1','provideInput':true,'listEvents':true,'logIndices':[]}"
+        );
+        string memory url = string.concat(
+            vm.envString("VERIFIER_URL_TESTNET"),
+            "verifier/",
+            urlTypeBase,
+            "/EVMTransaction/prepareRequest"
+        );
         return FdcBase.prepareFdcRequest(url, "EVMTransaction", sourceId, requestBody);
     }
 }
@@ -149,7 +178,6 @@ contract SubmitRequests is Script {
         uint256 roundId = FdcBase.calculateRoundId(timestamp);
         string memory roundIdFile = string.concat(attestationType, "_roundId.txt");
         FdcBase.writeToFile(dirPath, roundIdFile, Strings.toString(roundId), true);
-        console.log(string.concat(attestationType, " Request submitted in round: "), roundId);
     }
 }
 
@@ -161,19 +189,34 @@ contract RetrieveProofs is Script {
         uint256 roundIdWeb2 = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_Web2Json_roundId.txt")));
         IWeb2Json.Proof memory web2Proof = retrieveWeb2JsonProof(web2JsonRequest, roundIdWeb2);
         FdcBase.writeToFile(dirPath, "_Web2Json_proof.txt", StringsBase.toHexString(abi.encode(web2Proof)), true);
-        console.log("Web2Json proof retrieved and saved.");
 
-        bytes memory evmCostonRequest = vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_request.txt")));
-        uint256 roundIdCoston = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_roundId.txt")));
+        bytes memory evmCostonRequest = vm.parseBytes(
+            vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_request.txt"))
+        );
+        uint256 roundIdCoston = FdcBase.stringToUint(
+            vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_roundId.txt"))
+        );
         IEVMTransaction.Proof memory evmCostonProof = retrieveEvmProof(evmCostonRequest, roundIdCoston);
-        FdcBase.writeToFile(dirPath, "_EVMTransaction_Coston_proof.txt", StringsBase.toHexString(abi.encode(evmCostonProof)), true);
-        console.log("Coston EVM proof retrieved and saved.");
+        FdcBase.writeToFile(
+            dirPath,
+            "_EVMTransaction_Coston_proof.txt",
+            StringsBase.toHexString(abi.encode(evmCostonProof)),
+            true
+        );
 
-        bytes memory evmCoston2Request = vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_request.txt")));
-        uint256 roundIdCoston2 = FdcBase.stringToUint(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_roundId.txt")));
+        bytes memory evmCoston2Request = vm.parseBytes(
+            vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_request.txt"))
+        );
+        uint256 roundIdCoston2 = FdcBase.stringToUint(
+            vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_roundId.txt"))
+        );
         IEVMTransaction.Proof memory evmCoston2Proof = retrieveEvmProof(evmCoston2Request, roundIdCoston2);
-        FdcBase.writeToFile(dirPath, "_EVMTransaction_Coston2_proof.txt", StringsBase.toHexString(abi.encode(evmCoston2Proof)), true);
-        console.log("Coston2 EVM proof retrieved and saved.");
+        FdcBase.writeToFile(
+            dirPath,
+            "_EVMTransaction_Coston2_proof.txt",
+            StringsBase.toHexString(abi.encode(evmCoston2Proof)),
+            true
+        );
     }
 
     function retrieveWeb2JsonProof(bytes memory req, uint256 roundId) internal returns (IWeb2Json.Proof memory) {
@@ -199,11 +242,22 @@ contract RetrieveProofs is Script {
 //      forge script script/ProofOfReserves.s.sol:VerifyReserves --rpc-url $COSTON_RPC_URL --broadcast
 contract VerifyReserves is Script {
     function run() external {
-        IWeb2Json.Proof memory web2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(dirPath, "_Web2Json_proof.txt"))), (IWeb2Json.Proof));
-        IEVMTransaction.Proof memory evmCostonProof = abi.decode(vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_proof.txt"))), (IEVMTransaction.Proof));
-        IEVMTransaction.Proof memory evmCoston2Proof = abi.decode(vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_proof.txt"))), (IEVMTransaction.Proof));
-        
-        address proofOfReservesAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_proofOfReserves-114.txt")));
+        IWeb2Json.Proof memory web2Proof = abi.decode(
+            vm.parseBytes(vm.readFile(string.concat(dirPath, "_Web2Json_proof.txt"))),
+            (IWeb2Json.Proof)
+        );
+        IEVMTransaction.Proof memory evmCostonProof = abi.decode(
+            vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston_proof.txt"))),
+            (IEVMTransaction.Proof)
+        );
+        IEVMTransaction.Proof memory evmCoston2Proof = abi.decode(
+            vm.parseBytes(vm.readFile(string.concat(dirPath, "_EVMTransaction_Coston2_proof.txt"))),
+            (IEVMTransaction.Proof)
+        );
+
+        address proofOfReservesAddress = vm.parseAddress(
+            vm.readFile(string.concat(dirPath, "_proofOfReserves-114.txt"))
+        );
         address readerCostonAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_reader16.txt")));
         address tokenCostonAddress = vm.parseAddress(vm.readFile(string.concat(dirPath, "_token16.txt")));
         address readerCoston2Address = vm.parseAddress(vm.readFile(string.concat(dirPath, "_reader114.txt")));
@@ -220,10 +274,7 @@ contract VerifyReserves is Script {
         vm.startBroadcast(deployerPrivateKey);
         por.updateAddress(readerCostonAddress, tokenCostonAddress);
         por.updateAddress(readerCoston2Address, tokenCoston2Address);
-        bool success = por.verifyReserves(web2Proof, evmProofs);
+        por.verifyReserves(web2Proof, evmProofs);
         vm.stopBroadcast();
-
-        console.log("\n--- VERIFICATION COMPLETE ---");
-        console.log("Sufficient Reserves Check Passed:", success);
     }
 }

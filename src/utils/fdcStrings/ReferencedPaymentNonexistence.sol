@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {Base} from "./Base.sol";
-import {IReferencedPaymentNonexistence} from "flare-periphery/src/coston2/IReferencedPaymentNonexistence.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { Base } from "./Base.sol";
+import { IReferencedPaymentNonexistence } from "flare-periphery/src/coston2/IReferencedPaymentNonexistence.sol";
 
 library FdcStrings {
-    function toJsonString(
-        IReferencedPaymentNonexistence.Request memory request
-    ) internal pure returns (string memory) {
+    function toJsonString(IReferencedPaymentNonexistence.Request memory request) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(request.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(request.sourceId),
-                '","messageIntegrityCode":"',
+                "','messageIntegrityCode':'",
                 Base.toString(request.messageIntegrityCode),
-                '","requestBody":',
+                "','requestBody':",
                 toJsonString(request.requestBody),
                 "}"
             );
@@ -28,30 +26,28 @@ library FdcStrings {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(response.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(response.sourceId),
-                '","votingRound":',
+                "','votingRound':",
                 Strings.toString(response.votingRound),
-                ',"lowestUsedTimestamp":',
+                ",'lowestUsedTimestamp':",
                 Strings.toString(response.lowestUsedTimestamp),
-                ',"requestBody":',
+                ",'requestBody':",
                 toJsonString(response.requestBody),
-                ',"responseBody":',
+                ",'responseBody':",
                 toJsonString(response.responseBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IReferencedPaymentNonexistence.Proof memory proof
-    ) internal pure returns (string memory) {
+    function toJsonString(IReferencedPaymentNonexistence.Proof memory proof) internal pure returns (string memory) {
         return
             string.concat(
-                '{"merkleProof":',
+                "{'merkleProof':",
                 Base.toString(proof.merkleProof),
-                ',"data":',
+                ",'data':",
                 toJsonString(proof.data),
                 "}"
             );
@@ -62,23 +58,23 @@ library FdcStrings {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                '{"minimalBlockNumber":',
+                "{'minimalBlockNumber':",
                 Strings.toString(requestBody.minimalBlockNumber),
-                ',"deadlineBlockNumber":',
+                ",'deadlineBlockNumber':",
                 Strings.toString(requestBody.deadlineBlockNumber),
-                ',"deadlineTimestamp":',
+                ",'deadlineTimestamp':",
                 Strings.toString(requestBody.deadlineTimestamp),
-                ',"destinationAddressHash":"',
+                ",'destinationAddressHash':'",
                 Base.toString(requestBody.destinationAddressHash),
-                '","amount":"',
+                "','amount':'",
                 Strings.toString(requestBody.amount),
-                '","standardPaymentReference":"',
+                "','standardPaymentReference':'",
                 Base.toString(requestBody.standardPaymentReference),
-                '","checkSourceAddresses":',
+                "','checkSourceAddresses':",
                 Base.toString(requestBody.checkSourceAddresses),
-                ',"sourceAddressesRoot":"',
+                ",'sourceAddressesRoot':'",
                 Base.toString(requestBody.sourceAddressesRoot),
-                '"}'
+                "'}"
             );
     }
 
@@ -87,11 +83,11 @@ library FdcStrings {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                '{"minimalBlockTimestamp":',
+                "{'minimalBlockTimestamp':",
                 Strings.toString(responseBody.minimalBlockTimestamp),
-                ',"firstOverflowBlockNumber":',
+                ",'firstOverflowBlockNumber':",
                 Strings.toString(responseBody.firstOverflowBlockNumber),
-                ',"firstOverflowBlockTimestamp":',
+                ",'firstOverflowBlockTimestamp':",
                 Strings.toString(responseBody.firstOverflowBlockTimestamp),
                 "}"
             );

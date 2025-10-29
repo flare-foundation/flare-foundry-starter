@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
-import {IFdcVerification} from "flare-periphery/src/coston2/IFdcVerification.sol";
-import {FdcStrings} from "src/utils/fdcStrings/Payment.sol";
-import {IPayment} from "flare-periphery/src/coston2/IPayment.sol";
+import { ContractRegistry } from "flare-periphery/src/coston2/ContractRegistry.sol";
+import { IFdcVerification } from "flare-periphery/src/coston2/IFdcVerification.sol";
+import { IPayment } from "flare-periphery/src/coston2/IPayment.sol";
 
 struct Payment {
     uint64 blockNumber;
@@ -25,16 +22,6 @@ interface IPaymentRegistry {
 contract PaymentRegistry is IPaymentRegistry {
     Payment[] public verifiedPayments;
 
-    function isPaymentProofValid(
-        IPayment.Proof calldata transaction
-    ) public view returns (bool) {
-        // Use the library to get the verifier contract and verify that this transaction was proved by state connector
-        IFdcVerification fdc = ContractRegistry.getFdcVerification();
-        console.log("transaction: %s\n", FdcStrings.toJsonString(transaction));
-        // return true;
-        return fdc.verifyPayment(transaction);
-    }
-
     function registerPayment(IPayment.Proof calldata _transaction) external {
         // 1. FDC Logic
         // Check that this Payment has indeed been confirmed by the FDC
@@ -52,5 +39,13 @@ contract PaymentRegistry is IPaymentRegistry {
         );
 
         verifiedPayments.push(provedPayment);
+    }
+
+    function isPaymentProofValid(IPayment.Proof calldata transaction) public view returns (bool) {
+        // Use the library to get the verifier contract and verify that this transaction was proved by state connector
+        IFdcVerification fdc = ContractRegistry.getFdcVerification();
+
+        // return true;
+        return fdc.verifyPayment(transaction);
     }
 }

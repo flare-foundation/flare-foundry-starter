@@ -1,32 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
-import {RandomNumberV2Interface} from "flare-periphery/src/coston2/RandomNumberV2Interface.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { ContractRegistry } from "flare-periphery/src/coston2/ContractRegistry.sol";
+import { RandomNumberV2Interface } from "flare-periphery/src/coston2/RandomNumberV2Interface.sol";
 
 contract GuessingGame {
     uint16 private _secretNumber;
     uint256 public _maxNumber;
-    RandomNumberV2Interface _generator;
+    RandomNumberV2Interface public _generator;
 
     constructor(uint256 maxNumber) {
-        require(
-            maxNumber <= type(uint16).max,
-            "Only numbers smaller than 65535 allowed"
-        );
+        require(maxNumber <= type(uint16).max, "Only numbers smaller than 65535 allowed");
         _maxNumber = maxNumber;
         _generator = ContractRegistry.getRandomNumberV2();
         _setNewSecretNumber();
     }
 
+    function resetGame() public {
+        _setNewSecretNumber();
+    }
+
     function guess(uint16 number) public view returns (string memory) {
         if (number > _maxNumber) {
-            return
-                string.concat(
-                    "Numbers go only up to ",
-                    Strings.toString(_maxNumber)
-                );
+            return string.concat("Numbers go only up to ", Strings.toString(_maxNumber));
         } else if (number > _secretNumber) {
             return "Too big";
         } else if (number < _secretNumber) {
@@ -36,10 +33,6 @@ contract GuessingGame {
         } else {
             return "IMPOSSIBLE!";
         }
-    }
-
-    function resetGame() public {
-        _setNewSecretNumber();
     }
 
     function _setNewSecretNumber() private {

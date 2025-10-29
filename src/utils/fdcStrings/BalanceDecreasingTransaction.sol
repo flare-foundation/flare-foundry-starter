@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {Base} from "./Base.sol";
-import {IBalanceDecreasingTransaction} from "flare-periphery/src/coston2/IBalanceDecreasingTransaction.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { Base } from "./Base.sol";
+import { IBalanceDecreasingTransaction } from "flare-periphery/src/coston2/IBalanceDecreasingTransaction.sol";
 
 library FdcStrings {
-    function toJsonString(
-        IBalanceDecreasingTransaction.Request memory request
-    ) internal pure returns (string memory) {
+    function toJsonString(IBalanceDecreasingTransaction.Request memory request) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(request.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(request.sourceId),
-                '","messageIntegrityCode":"',
+                "','messageIntegrityCode':'",
                 Base.toString(request.messageIntegrityCode),
-                '","requestBody":',
+                "','requestBody':",
                 toJsonString(request.requestBody),
                 "}"
             );
@@ -28,30 +26,28 @@ library FdcStrings {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(response.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(response.sourceId),
-                '","votingRound":',
+                "','votingRound':",
                 Strings.toString(response.votingRound),
-                ',"lowestUsedTimestamp":',
+                ",'lowestUsedTimestamp':",
                 Strings.toString(response.lowestUsedTimestamp),
-                ',"requestBody":',
+                ",'requestBody':",
                 toJsonString(response.requestBody),
-                ',"responseBody":',
+                ",'responseBody':",
                 toJsonString(response.responseBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IBalanceDecreasingTransaction.Proof memory proof
-    ) internal pure returns (string memory) {
+    function toJsonString(IBalanceDecreasingTransaction.Proof memory proof) internal pure returns (string memory) {
         return
             string.concat(
-                '{"merkleProof":',
+                "{'merkleProof':",
                 Base.toString(proof.merkleProof),
-                ',"data":',
+                ",'data':",
                 toJsonString(proof.data),
                 "}"
             );
@@ -62,11 +58,11 @@ library FdcStrings {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                '{"transactionId":"',
+                "{'transactionId':'",
                 Base.toString(requestBody.transactionId),
-                '","sourceAddressIndicator":"',
+                "','sourceAddressIndicator':'",
                 Base.toString(requestBody.sourceAddressIndicator),
-                '"}'
+                "'}"
             );
     }
 
@@ -75,17 +71,17 @@ library FdcStrings {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                '{"blockNumber":',
+                "{'blockNumber':",
                 Strings.toString(responseBody.blockNumber),
-                ',"blockTimestamp":',
+                ",'blockTimestamp':",
                 Strings.toString(responseBody.blockTimestamp),
-                ',"sourceAddressHash":"',
+                ",'sourceAddressHash':'",
                 Base.toString(responseBody.sourceAddressHash),
-                '","spentAmount":',
+                "','spentAmount':",
                 Strings.toStringSigned(responseBody.spentAmount),
-                ',"standardPaymentReference":"',
+                ",'standardPaymentReference':'",
                 Base.toString(responseBody.standardPaymentReference),
-                '"}'
+                "'}"
             );
     }
 }

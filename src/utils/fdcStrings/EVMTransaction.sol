@@ -1,130 +1,115 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {Base} from "./Base.sol";
-import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { Base } from "./Base.sol";
+import { IEVMTransaction } from "flare-periphery/src/coston2/IEVMTransaction.sol";
 
 library FdcStrings {
-    function toJsonString(
-        IEVMTransaction.Request memory request
-    ) internal pure returns (string memory) {
+    function toJsonString(IEVMTransaction.Request memory request) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toHexString(request.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toHexString(request.sourceId),
-                '","messageIntegrityCode":"',
+                "','messageIntegrityCode':'",
                 Base.toString(request.messageIntegrityCode),
-                '","requestBody":',
+                "','requestBody':",
                 toJsonString(request.requestBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IEVMTransaction.Response memory response
-    ) internal pure returns (string memory) {
+    function toJsonString(IEVMTransaction.Response memory response) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toHexString(response.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toHexString(response.sourceId),
-                '","votingRound":',
-                '"',
+                "','votingRound':",
+                "'",
                 Strings.toString(response.votingRound),
-                '"',
-                ',"lowestUsedTimestamp":',
-                '"',
+                "'",
+                ",'lowestUsedTimestamp':",
+                "'",
                 Strings.toString(response.lowestUsedTimestamp),
-                '"',
-                ',"requestBody":',
+                "'",
+                ",'requestBody':",
                 toJsonString(response.requestBody),
-                ',"responseBody":',
+                ",'responseBody':",
                 toJsonString(response.responseBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IEVMTransaction.Proof memory proof
-    ) internal pure returns (string memory) {
+    function toJsonString(IEVMTransaction.Proof memory proof) internal pure returns (string memory) {
         return
             string.concat(
                 // FIXME should this be data or response
-                '{"response":',
+                "{'response':",
                 toJsonString(proof.data),
                 // FIXME should this be proof or merkleProof
-                ',"proof":',
+                ",'proof':",
                 Base.toString(proof.merkleProof),
                 "}"
             );
     }
 
-    function toJsonString(
-        IEVMTransaction.RequestBody memory requestBody
-    ) internal pure returns (string memory) {
+    function toJsonString(IEVMTransaction.RequestBody memory requestBody) internal pure returns (string memory) {
         return
             string.concat(
-                '{"transactionHash":"',
+                "{'transactionHash':'",
                 Base.toString(requestBody.transactionHash),
-                '", "requiredConfirmations":',
-                '"',
+                "', 'requiredConfirmations':",
+                "'",
                 Strings.toString(requestBody.requiredConfirmations),
-                '"',
-                ', "provideInput": ',
+                "'",
+                ", 'provideInput': ",
                 Base.toString(requestBody.provideInput),
-                ', "listEvents": ',
+                ", 'listEvents': ",
                 Base.toString(requestBody.listEvents),
-                ', "logIndices": ',
+                ", 'logIndices': ",
                 Base.toString(requestBody.logIndices),
                 "}"
             );
     }
 
-    function toJsonString(
-        IEVMTransaction.ResponseBody memory responseBody
-    ) internal pure returns (string memory) {
+    function toJsonString(IEVMTransaction.ResponseBody memory responseBody) internal pure returns (string memory) {
         return
             string.concat(
-                '{"blockNumber":',
-                '"',
+                "{'blockNumber':",
+                "'",
                 Strings.toString(responseBody.blockNumber),
-                '"',
-                ',"timestamp":',
-                '"',
+                "'",
+                ",'timestamp':",
+                "'",
                 Strings.toString(responseBody.timestamp),
-                '"',
-                ',"sourceAddress":"',
+                "'",
+                ",'sourceAddress':'",
                 Base.toHexString(abi.encodePacked(responseBody.sourceAddress)),
-                '","isDeployment":',
+                "','isDeployment':",
                 Base.toString(responseBody.isDeployment),
-                ',"receivingAddress":"',
-                Base.toHexString(
-                    abi.encodePacked(responseBody.receivingAddress)
-                ),
-                '","value":',
-                '"',
+                ",'receivingAddress':'",
+                Base.toHexString(abi.encodePacked(responseBody.receivingAddress)),
+                "','value':",
+                "'",
                 Strings.toString(responseBody.value),
-                '"',
-                ',"input":"',
+                "'",
+                ",'input':'",
                 Base.toHexString(responseBody.input),
-                '","status":',
-                '"',
+                "','status':",
+                "'",
                 Strings.toString(responseBody.status),
-                '"',
-                ',"events":',
+                "'",
+                ",'events':",
                 toJsonString(responseBody.events),
                 "}"
             );
     }
 
-    function toJsonString(
-        IEVMTransaction.Event[] memory events
-    ) internal pure returns (string memory) {
+    function toJsonString(IEVMTransaction.Event[] memory events) internal pure returns (string memory) {
         string memory result = "[";
         for (uint256 i = 0; i < events.length; i++) {
             result = string.concat(result, toJsonString(events[i]));
@@ -135,22 +120,20 @@ library FdcStrings {
         return string.concat(result, "]");
     }
 
-    function toJsonString(
-        IEVMTransaction.Event memory _event
-    ) internal pure returns (string memory) {
+    function toJsonString(IEVMTransaction.Event memory _event) internal pure returns (string memory) {
         return
             string.concat(
-                '{"logIndex":',
+                "{'logIndex':",
                 Strings.toString(_event.logIndex),
-                ',"emitterAddress":"',
+                ",'emitterAddress':'",
                 Base.toHexString(abi.encodePacked(_event.emitterAddress)),
-                '","topics":',
+                "','topics':",
                 Base.toString(_event.topics),
                 // HACK to avoid the error with reading JSON file, where Foundry interprets strings
                 // with 0x of length less than 66 as bytes32 instead of bytes
-                ',"data":"0x',
+                ",'data':'0x",
                 Base.toString(_event.data),
-                '","removed":',
+                "','removed':",
                 Base.toString(_event.removed),
                 "}"
             );

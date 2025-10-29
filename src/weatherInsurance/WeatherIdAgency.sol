@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {IWeb2Json} from "flare-periphery/src/coston2/IWeb2Json.sol";
-import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
+import { IWeb2Json } from "flare-periphery/src/coston2/IWeb2Json.sol";
+import { ContractRegistry } from "flare-periphery/src/coston2/ContractRegistry.sol";
 
 // All floats are scaled by 1e6
 struct WeatherIdDataTransportObject {
@@ -55,14 +54,8 @@ contract WeatherIdAgency {
         uint256 coverage
     ) public payable {
         require(msg.value > 0, "No premium paid");
-        require(
-            startTimestamp < expirationTimestamp,
-            "Start must be before expiration"
-        );
-        require(
-            block.timestamp < startTimestamp,
-            "Policy cannot be created in the past"
-        );
+        require(startTimestamp < expirationTimestamp, "Start must be before expiration");
+        require(block.timestamp < startTimestamp, "Policy cannot be created in the past");
 
         Policy memory newPolicy = Policy({
             holder: msg.sender,
@@ -83,14 +76,8 @@ contract WeatherIdAgency {
 
     function claimPolicy(uint256 id) public payable {
         Policy storage policy = registeredPolicies[id];
-        require(
-            policy.status == PolicyStatus.Unclaimed,
-            "Policy not available to be claimed"
-        );
-        require(
-            block.timestamp < policy.startTimestamp,
-            "Cannot claim a policy that has already started"
-        );
+        require(policy.status == PolicyStatus.Unclaimed, "Policy not available to be claimed");
+        require(block.timestamp < policy.startTimestamp, "Cannot claim a policy that has already started");
         require(msg.value >= policy.coverage, "Insufficient coverage paid");
 
         policy.status = PolicyStatus.Open;
@@ -103,14 +90,8 @@ contract WeatherIdAgency {
     function resolvePolicy(uint256 id, IWeb2Json.Proof calldata proof) public {
         Policy storage policy = registeredPolicies[id];
         require(policy.status == PolicyStatus.Open, "Policy is not open");
-        require(
-            block.timestamp >= policy.startTimestamp,
-            "Policy not yet in effect"
-        );
-        require(
-            block.timestamp <= policy.expirationTimestamp,
-            "Policy has expired"
-        );
+        require(block.timestamp >= policy.startTimestamp, "Policy not yet in effect");
+        require(block.timestamp <= policy.expirationTimestamp, "Policy has expired");
         require(isJsonApiProofValid(proof), "Invalid FDC proof");
 
         WeatherIdDataTransportObject memory dto = abi.decode(
@@ -118,15 +99,11 @@ contract WeatherIdAgency {
             (WeatherIdDataTransportObject)
         );
         require(
-            dto.latitude == policy.latitude &&
-                dto.longitude == policy.longitude,
+            dto.latitude == policy.latitude && dto.longitude == policy.longitude,
             "Proof coordinates do not match policy"
         );
 
-        if (
-            dto.weatherId >= policy.weatherIdThreshold &&
-            (dto.weatherId / 100) == (policy.weatherIdThreshold / 100)
-        ) {
+        if (dto.weatherId >= policy.weatherIdThreshold && (dto.weatherId / 100) == (policy.weatherIdThreshold / 100)) {
             policy.status = PolicyStatus.Settled;
             payable(policy.holder).transfer(policy.coverage);
             emit PolicySettled(id, policy.holder);
@@ -136,10 +113,7 @@ contract WeatherIdAgency {
     function expirePolicy(uint256 id) public {
         Policy storage policy = registeredPolicies[id];
         require(policy.status == PolicyStatus.Open, "Policy is not open");
-        require(
-            block.timestamp > policy.expirationTimestamp,
-            "Policy has not yet expired"
-        );
+        require(block.timestamp > policy.expirationTimestamp, "Policy has not yet expired");
 
         policy.status = PolicyStatus.Settled;
         payable(insurers[id]).transfer(policy.coverage);
@@ -148,14 +122,8 @@ contract WeatherIdAgency {
 
     function retireUnclaimedPolicy(uint256 id) public {
         Policy storage policy = registeredPolicies[id];
-        require(
-            policy.status == PolicyStatus.Unclaimed,
-            "Policy is not unclaimed"
-        );
-        require(
-            block.timestamp > policy.startTimestamp,
-            "Policy has not started yet"
-        );
+        require(policy.status == PolicyStatus.Unclaimed, "Policy is not unclaimed");
+        require(block.timestamp > policy.startTimestamp, "Policy has not started yet");
 
         policy.status = PolicyStatus.Settled;
         payable(policy.holder).transfer(policy.premium);
@@ -174,9 +142,7 @@ contract WeatherIdAgency {
         return registeredPolicies;
     }
 
-    function isJsonApiProofValid(
-        IWeb2Json.Proof calldata _proof
-    ) private view returns (bool) {
+    function isJsonApiProofValid(IWeb2Json.Proof calldata _proof) private view returns (bool) {
         return ContractRegistry.getFdcVerification().verifyWeb2Json(_proof);
     }
 }

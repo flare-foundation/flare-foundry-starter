@@ -4,7 +4,5 @@ pragma solidity >=0.7.6 <0.9;
 import "flare-periphery/src/coston2/IEVMTransaction.sol";
 
 interface IEVMTransactionVerification {
-    function verifyEVMTransaction(
-        IEVMTransaction.Proof calldata _proof
-    ) external payable returns (bool _proved);
+    function verifyEVMTransaction(IEVMTransaction.Proof calldata _proof) external payable returns (bool _proved);
 }

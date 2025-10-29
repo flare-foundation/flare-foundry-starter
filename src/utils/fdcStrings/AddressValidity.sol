@@ -1,80 +1,70 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {Base} from "./Base.sol";
-import {IAddressValidity} from "flare-periphery/src/coston2/IAddressValidity.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { Base } from "./Base.sol";
+import { IAddressValidity } from "flare-periphery/src/coston2/IAddressValidity.sol";
 
 library FdcStrings {
-    function toJsonString(
-        IAddressValidity.Request memory request
-    ) internal pure returns (string memory) {
+    function toJsonString(IAddressValidity.Request memory request) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(request.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(request.sourceId),
-                '","messageIntegrityCode":"',
+                "','messageIntegrityCode':'",
                 Base.toString(request.messageIntegrityCode),
-                '","requestBody":',
+                "','requestBody':",
                 toJsonString(request.requestBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IAddressValidity.Response memory response
-    ) internal pure returns (string memory) {
+    function toJsonString(IAddressValidity.Response memory response) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(response.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(response.sourceId),
-                '","votingRound":',
+                "','votingRound':",
                 Strings.toString(response.votingRound),
-                ',"lowestUsedTimestamp":',
+                ",'lowestUsedTimestamp':",
                 Strings.toString(response.lowestUsedTimestamp),
-                ',"requestBody":',
+                ",'requestBody':",
                 toJsonString(response.requestBody),
-                ',"responseBody":',
+                ",'responseBody':",
                 toJsonString(response.responseBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IAddressValidity.Proof memory proof
-    ) internal pure returns (string memory) {
+    function toJsonString(IAddressValidity.Proof memory proof) internal pure returns (string memory) {
         return
             string.concat(
-                '{"merkleProof":',
+                "{'merkleProof':",
                 Base.toString(proof.merkleProof),
-                ',"data":',
+                ",'data':",
                 toJsonString(proof.data),
                 "}"
             );
     }
 
-    function toJsonString(
-        IAddressValidity.RequestBody memory requestBody
-    ) internal pure returns (string memory) {
-        return string.concat('{"addressStr":"', requestBody.addressStr, '"}');
+    function toJsonString(IAddressValidity.RequestBody memory requestBody) internal pure returns (string memory) {
+        return string.concat("{'addressStr':'", requestBody.addressStr, "'}");
     }
 
-    function toJsonString(
-        IAddressValidity.ResponseBody memory responseBody
-    ) internal pure returns (string memory) {
+    function toJsonString(IAddressValidity.ResponseBody memory responseBody) internal pure returns (string memory) {
         return
             string.concat(
-                '{"isValid":',
+                "{'isValid':",
                 Base.toString(responseBody.isValid),
-                ',"standardAddress":"',
+                ",'standardAddress':'",
                 responseBody.standardAddress,
-                '","standardAddressHash":"',
+                "','standardAddressHash':'",
                 Base.toString(responseBody.standardAddressHash),
-                '"}'
+                "'}"
             );
     }
 }

@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
-import {Test} from "dependencies/forge-std-1.9.5/src/Test.sol";
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
-import {FdcStrings} from "src/utils/fdcStrings/EVMTransaction.sol";
-import {Base} from "src/utils/fdcStrings/Base.sol";
+import { Test } from "dependencies/forge-std-1.9.5/src/Test.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { Base } from "src/utils/fdcStrings/Base.sol";
 
 contract TestFdcStrings is Test {
     function test_toString_bool() public pure {
@@ -14,14 +11,8 @@ contract TestFdcStrings is Test {
         string memory expected1 = "true";
         string memory got2 = Base.toString(false);
         string memory expected2 = "false";
-        require(
-            Strings.equal(got1, expected1),
-            string.concat("Expected: ", expected1, ", got:", got1)
-        );
-        require(
-            Strings.equal(got2, expected2),
-            string.concat("Expected: ", expected2, ", got:", got2)
-        );
+        require(Strings.equal(got1, expected1), string.concat("Expected: ", expected1, ", got:", got1));
+        require(Strings.equal(got2, expected2), string.concat("Expected: ", expected2, ", got:", got2));
     }
 
     struct TestReq {
@@ -44,10 +35,7 @@ contract TestFdcStrings is Test {
     function test_toString_Request() public view {
         // TODO: Implement this test
         string memory root = vm.projectRoot();
-        string memory path = string.concat(
-            root,
-            "/test/utils/examples/IEVMTransaction/Request.json"
-        );
+        string memory path = string.concat(root, "/test/utils/examples/IEVMTransaction/Request.json");
         string memory got1 = vm.readFile(path);
         bytes memory data = vm.parseJson(got1);
         TestReq memory request = abi.decode(data, (TestReq));

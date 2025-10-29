@@ -1,43 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
-import {Vm} from "dependencies/forge-std-1.9.5/src/Vm.sol";
-import {Surl} from "dependencies/surl-0.0.0/src/Surl.sol";
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {ContractRegistry} from "flare-periphery/src/coston2/ContractRegistry.sol";
-import {IFdcHub} from "flare-periphery/src/coston2/IFdcHub.sol";
-import {IFlareSystemsManager} from "flare-periphery/src/coston2/IFlareSystemsManager.sol";
-import {IAddressValidity} from "flare-periphery/src/coston2/IAddressValidity.sol";
-import {TransferEventListener} from "src/FdcTransferEventListener.sol";
-import {Base as StringsBase} from "src/utils/fdcStrings/Base.sol";
-import {IFdcRequestFeeConfigurations} from "flare-periphery/src/coston2/IFdcRequestFeeConfigurations.sol";
-import {IRelay} from "flare-periphery/src/coston2/IRelay.sol";
-import {stdJson} from "forge-std/StdJson.sol";
+// solhint-disable ordering
 
-address constant VM_ADDRESS = address(
-    uint160(uint256(keccak256("hevm cheat code")))
-);
+import { Vm } from "dependencies/forge-std-1.9.5/src/Vm.sol";
+import { Surl } from "dependencies/surl-0.0.0/src/Surl.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { ContractRegistry } from "flare-periphery/src/coston2/ContractRegistry.sol";
+import { IFdcHub } from "flare-periphery/src/coston2/IFdcHub.sol";
+import { IFlareSystemsManager } from "flare-periphery/src/coston2/IFlareSystemsManager.sol";
+import { Base as StringsBase } from "src/utils/fdcStrings/Base.sol";
+import { IFdcRequestFeeConfigurations } from "flare-periphery/src/coston2/IFdcRequestFeeConfigurations.sol";
+import { IRelay } from "flare-periphery/src/coston2/IRelay.sol";
+
+address constant VM_ADDRESS = address(uint160(uint256(keccak256("hevm cheat code"))));
 Vm constant vm = Vm(VM_ADDRESS);
 
 /**
  * @title Base Library
- * @notice A utility library for preparing and handling Flare FDC attestation requests and proofs in a Foundry environment.
+ * @notice A utility library for preparing and handling Flare FDC attestation requests and proofs in a Foundry
+ * environment.
  * @dev This library interacts with the Flare Verifier API, Data Availability Layer, and on-chain Flare contracts.
  * It relies on Foundry cheat codes (Vm) for environment variable access and external calls.
  */
 library Base {
     using Surl for *;
-
-    //-/////////////////////////////////////////////////////////////////////////
-    //                             CONSTANTS
-    //-/////////////////////////////////////////////////////////////////////////
-
-    uint256 private constant MAX_FINALIZATION_ATTEMPTS = 40;
-    uint256 private constant FINALIZATION_POLL_INTERVAL_SECONDS = 30;
-    uint256 private constant MAX_DA_LAYER_ATTEMPTS = 15;
-    uint256 private constant DA_LAYER_POLL_INTERVAL_SECONDS = 10;
-    uint256 private constant PADDED_HEX_STRING_LENGTH = 64;
 
     //-/////////////////////////////////////////////////////////////////////////
     //                               STRUCTS
@@ -58,6 +45,16 @@ library Base {
         string roundId;
         string requestBytes;
     }
+
+    //-/////////////////////////////////////////////////////////////////////////
+    //                             CONSTANTS
+    //-/////////////////////////////////////////////////////////////////////////
+
+    uint256 private constant MAX_FINALIZATION_ATTEMPTS = 40;
+    uint256 private constant FINALIZATION_POLL_INTERVAL_SECONDS = 30;
+    uint256 private constant MAX_DA_LAYER_ATTEMPTS = 15;
+    uint256 private constant DA_LAYER_POLL_INTERVAL_SECONDS = 10;
+    uint256 private constant PADDED_HEX_STRING_LENGTH = 64;
 
     //-/////////////////////////////////////////////////////////////////////////
     //                      VERIFIER API HELPERS
@@ -117,8 +114,6 @@ library Base {
         string memory apiKey = vm.envString("VERIFIER_API_KEY_TESTNET");
         headers = prepareHeaders(apiKey);
         body = prepareBody(attestationType, sourceId, requestBody);
-        console.log("headers: {%s, %s}\n", headers[0], headers[1]);
-        console.log("body: %s\n", body);
     }
 
     /**
@@ -128,8 +123,8 @@ library Base {
      */
     function prepareHeaders(string memory apiKey) internal pure returns (string[] memory headers) {
         headers = new string[](2);
-        headers[0] = string.concat('"X-API-KEY": "', apiKey, '"');
-        headers[1] = '"Content-Type": "application/json"';
+        headers[0] = string.concat("'X-API-KEY': '", apiKey, "'");
+        headers[1] = "'Content-Type': 'application/json'";
         return headers;
     }
 
@@ -145,15 +140,16 @@ library Base {
         string memory sourceId,
         string memory body
     ) internal pure returns (string memory) {
-        return string.concat(
-            '{"attestationType": "',
-            attestationType,
-            '", "sourceId": "',
-            sourceId,
-            '", "requestBody": ',
-            body,
-            "}"
-        );
+        return
+            string.concat(
+                "{'attestationType': '",
+                attestationType,
+                "', 'sourceId': '",
+                sourceId,
+                "', 'requestBody': ",
+                body,
+                "}"
+            );
     }
 
     /**
@@ -188,13 +184,13 @@ library Base {
         vm.startBroadcast(deployerPrivateKey);
         IFdcRequestFeeConfigurations fdcRequestFeeConfigurations = ContractRegistry.getFdcRequestFeeConfigurations();
         uint256 requestFee = fdcRequestFeeConfigurations.getRequestFee(abiEncodedRequest);
-        console.log("request fee: %s\n", requestFee);
+
         vm.stopBroadcast();
 
         vm.startBroadcast(deployerPrivateKey);
         IFdcHub fdcHub = ContractRegistry.getFdcHub();
-        console.log("fcdHub address: %s\n", address(fdcHub));
-        fdcHub.requestAttestation{value: requestFee}(abiEncodedRequest);
+
+        fdcHub.requestAttestation{ value: requestFee }(abiEncodedRequest);
         timestamp = vm.getBlockTimestamp();
         vm.stopBroadcast();
         return timestamp;
@@ -211,11 +207,9 @@ library Base {
         IFlareSystemsManager flareSystemsManager = ContractRegistry.getFlareSystemsManager();
         uint64 firstVotingRoundStartTs = flareSystemsManager.firstVotingRoundStartTs();
         uint64 rewardEpochDurationSeconds = flareSystemsManager.votingEpochDurationSeconds();
-        console.log("timestamp: %s\n", timestamp);
-        console.log("firstVotingRoundStartTs: %s\n", firstVotingRoundStartTs);
-        console.log("rewardEpochDurationSeconds: %s\n", rewardEpochDurationSeconds);
+
         roundId = (timestamp - uint256(firstVotingRoundStartTs)) / uint256(rewardEpochDurationSeconds);
-        console.log("roundId: %s\n", Strings.toString(roundId));
+
         vm.stopBroadcast();
         return roundId;
     }
@@ -224,7 +218,7 @@ library Base {
     //                      POLLING & PROOF RETRIEVAL
     //-/////////////////////////////////////////////////////////////////////////
 
-     /**
+    /**
      * @notice Waits for a specific voting round to be finalized on-chain.
      * @dev Polls the `isFinalized` function on the Relay contract using real-world delays.
      * @param protocolId The protocol ID for the attestation.
@@ -232,30 +226,15 @@ library Base {
      */
     function waitForRoundFinalization(uint8 protocolId, uint256 roundId) internal view {
         IRelay relay = ContractRegistry.getRelay();
-        console.log("Using Relay contract at address:", address(relay));
-        console.log(
-            "Checking for on-chain finalization of Voting Round ID: %s using Protocol ID: %s",
-            Strings.toString(roundId),
-            Strings.toString(protocolId)
-        );
 
-        if (relay.isFinalized(protocolId, roundId)) {
-            console.log("Round %s is finalized on-chain!", Strings.toString(roundId));
-        } else {
+        if (relay.isFinalized(protocolId, roundId)) {} else {
             // log the url that has the correct voting round
-            console.log(
-                string.concat(
-                    "Round ",
-                    Strings.toString(roundId),
-                    " is not finalized on-chain. Check progress here: https://coston2-systems-explorer.flare.rocks/voting-round/",
-                    Strings.toString(roundId)
-                )
-            );
+
             revert("Round not finalized on-chain.");
         }
     }
 
-     /**
+    /**
      * @notice Retrieves a proof from the Data Availability Layer with polling.
      */
     function retrieveProof(
@@ -269,12 +248,16 @@ library Base {
         // Stage 2: Poll the Data Availability Layer
         string memory daLayerUrl = vm.envString("COSTON2_DA_LAYER_URL");
         require(bytes(daLayerUrl).length > 0, "COSTON2_DA_LAYER_URL env var not set");
-        
-        string[] memory headers = prepareHeaders(vm.envString("X_API_KEY"));
-        string memory body = string.concat('{"votingRoundId":', Strings.toString(votingRoundId), ',"requestBytes":"', requestBytesHex, '"}');
-        string memory url = string.concat(daLayerUrl, "api/v1/fdc/proof-by-request-round-raw");
 
-        console.log("Polling DA Layer URL:", url);
+        string[] memory headers = prepareHeaders(vm.envString("X_API_KEY"));
+        string memory body = string.concat(
+            "{'votingRoundId':",
+            Strings.toString(votingRoundId),
+            ",'requestBytes':'",
+            requestBytesHex,
+            "'}"
+        );
+        string memory url = string.concat(daLayerUrl, "api/v1/fdc/proof-by-request-round-raw");
 
         bytes memory parsedProofData;
 
@@ -288,15 +271,12 @@ library Base {
         // Use vm.ffi with jq to safely check for the existence of the ".response_hex" key.
         jqCommand[2] = string.concat("echo '", responseString, "' | jq -r '.response_hex // \"null\"'");
         bytes memory validationResult = vm.ffi(jqCommand);
-        
+
         // We succeed if the result is not "null" and the response has a reasonable length.
         if (keccak256(validationResult) != keccak256(bytes("null"))) {
-            console.log("Proof successfully retrieved from DA Layer.");
             parsedProofData = parseData(responseData);
         } else {
-            if (bytes(responseString).length > 0) {
-                console.log("Received API Response:", responseString);
-            }
+            if (bytes(responseString).length > 0) {}
             revert("Proof not available from DA Layer.");
         }
 
@@ -314,10 +294,8 @@ library Base {
      * @return The parsed JSON data.
      */
     function parseData(bytes memory data) internal pure returns (bytes memory) {
-        console.log("raw data: ");
-        console.logBytes(data);
         string memory dataJsonString = string(data);
-        console.log("data: %s\n", dataJsonString);
+
         return vm.parseJson(dataJsonString);
     }
 
@@ -328,12 +306,9 @@ library Base {
      */
     function parseAttestationRequest(bytes memory data) internal pure returns (AttestationResponse memory response) {
         string memory dataString = string(data);
-        console.log("data: %s\n", dataString);
+
         bytes memory dataJson = vm.parseJson(dataString);
         response = abi.decode(dataJson, (AttestationResponse));
-        console.log("response status: %s\n", response.status);
-        console.log("response abiEncodedRequest: ");
-        console.logBytes(response.abiEncodedRequest);
     }
 
     //-/////////////////////////////////////////////////////////////////////////
@@ -451,9 +426,12 @@ library Base {
      * @param printString The content to write.
      * @param newFile If true, creates a new file; if false, appends a line.
      */
-    function writeToFile(string memory dirPath, string memory fileName, string memory printString, bool newFile)
-        internal
-    {
+    function writeToFile(
+        string memory dirPath,
+        string memory fileName,
+        string memory printString,
+        bool newFile
+    ) internal {
         require(vm.isDir(dirPath), string.concat("Manually create the directory: ", dirPath));
         string memory filePath = string.concat(dirPath, fileName, ".txt");
         if (newFile) {

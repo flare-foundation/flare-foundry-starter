@@ -1,57 +1,51 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {Base} from "./Base.sol";
-import {IConfirmedBlockHeightExists} from "flare-periphery/src/coston2/IConfirmedBlockHeightExists.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { Base } from "./Base.sol";
+import { IConfirmedBlockHeightExists } from "flare-periphery/src/coston2/IConfirmedBlockHeightExists.sol";
 
 library FdcStrings {
-    function toJsonString(
-        IConfirmedBlockHeightExists.Request memory request
-    ) internal pure returns (string memory) {
+    function toJsonString(IConfirmedBlockHeightExists.Request memory request) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(request.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(request.sourceId),
-                '","messageIntegrityCode":"',
+                "','messageIntegrityCode':'",
                 Base.toString(request.messageIntegrityCode),
-                '","requestBody":',
+                "','requestBody':",
                 toJsonString(request.requestBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IConfirmedBlockHeightExists.Response memory response
-    ) internal pure returns (string memory) {
+    function toJsonString(IConfirmedBlockHeightExists.Response memory response) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(response.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(response.sourceId),
-                '","votingRound":',
+                "','votingRound':",
                 Strings.toString(response.votingRound),
-                ',"lowestUsedTimestamp":',
+                ",'lowestUsedTimestamp':",
                 Strings.toString(response.lowestUsedTimestamp),
-                ',"requestBody":',
+                ",'requestBody':",
                 toJsonString(response.requestBody),
-                ',"responseBody":',
+                ",'responseBody':",
                 toJsonString(response.responseBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IConfirmedBlockHeightExists.Proof memory proof
-    ) internal pure returns (string memory) {
+    function toJsonString(IConfirmedBlockHeightExists.Proof memory proof) internal pure returns (string memory) {
         return
             string.concat(
-                '{"merkleProof":',
+                "{'merkleProof':",
                 Base.toString(proof.merkleProof),
-                ',"data":',
+                ",'data':",
                 toJsonString(proof.data),
                 "}"
             );
@@ -62,9 +56,9 @@ library FdcStrings {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                '{"blockNumber":',
+                "{'blockNumber':",
                 Strings.toString(requestBody.blockNumber),
-                ',"queryWindow":',
+                ",'queryWindow':",
                 Strings.toString(requestBody.queryWindow),
                 "}"
             );
@@ -75,13 +69,13 @@ library FdcStrings {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                '{"blockTimestamp":',
+                "{'blockTimestamp':",
                 Strings.toString(responseBody.blockTimestamp),
-                ',"numberOfConfirmations":',
+                ",'numberOfConfirmations':",
                 Strings.toString(responseBody.numberOfConfirmations),
-                ',"lowestQueryWindowBlockNumber":',
+                ",'lowestQueryWindowBlockNumber':",
                 Strings.toString(responseBody.lowestQueryWindowBlockNumber),
-                ',"lowestQueryWindowBlockTimestamp":',
+                ",'lowestQueryWindowBlockTimestamp':",
                 Strings.toString(responseBody.lowestQueryWindowBlockTimestamp),
                 "}"
             );

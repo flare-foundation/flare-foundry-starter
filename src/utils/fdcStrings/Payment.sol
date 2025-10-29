@@ -1,107 +1,97 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
-import {Base} from "./Base.sol";
-import {IPayment} from "flare-periphery/src/coston2/IPayment.sol";
+import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
+import { Base } from "./Base.sol";
+import { IPayment } from "flare-periphery/src/coston2/IPayment.sol";
 
 library FdcStrings {
-    function toJsonString(
-        IPayment.Request memory request
-    ) internal pure returns (string memory) {
+    function toJsonString(IPayment.Request memory request) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(request.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(request.sourceId),
-                '","messageIntegrityCode":"',
+                "','messageIntegrityCode':'",
                 Base.toString(request.messageIntegrityCode),
-                '","requestBody":',
+                "','requestBody':",
                 toJsonString(request.requestBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IPayment.Response memory response
-    ) internal pure returns (string memory) {
+    function toJsonString(IPayment.Response memory response) internal pure returns (string memory) {
         return
             string.concat(
-                '{"attestationType":"',
+                "{'attestationType':'",
                 Base.toString(response.attestationType),
-                '","sourceId":"',
+                "','sourceId':'",
                 Base.toString(response.sourceId),
-                '","votingRound":',
+                "','votingRound':",
                 Strings.toString(response.votingRound),
-                ',"lowestUsedTimestamp":',
+                ",'lowestUsedTimestamp':",
                 Strings.toString(response.lowestUsedTimestamp),
-                ',"requestBody":',
+                ",'requestBody':",
                 toJsonString(response.requestBody),
-                ',"responseBody":',
+                ",'responseBody':",
                 toJsonString(response.responseBody),
                 "}"
             );
     }
 
-    function toJsonString(
-        IPayment.Proof memory proof
-    ) internal pure returns (string memory) {
+    function toJsonString(IPayment.Proof memory proof) internal pure returns (string memory) {
         return
             string.concat(
-                '{"merkleProof":',
+                "{'merkleProof':",
                 Base.toString(proof.merkleProof),
-                ',"data":',
+                ",'data':",
                 toJsonString(proof.data),
                 "}"
             );
     }
 
-    function toJsonString(
-        IPayment.RequestBody memory requestBody
-    ) internal pure returns (string memory) {
+    function toJsonString(IPayment.RequestBody memory requestBody) internal pure returns (string memory) {
         return
             string.concat(
-                '{"transactionId":"',
+                "{'transactionId':'",
                 Base.toString(requestBody.transactionId),
-                '","inUtxo":',
+                "','inUtxo':",
                 Strings.toString(requestBody.inUtxo),
-                ',"utxo":',
+                ",'utxo':",
                 Strings.toString(requestBody.utxo),
                 "}"
             );
     }
 
-    function toJsonString(
-        IPayment.ResponseBody memory responseBody
-    ) internal pure returns (string memory) {
+    function toJsonString(IPayment.ResponseBody memory responseBody) internal pure returns (string memory) {
         return
             string.concat(
-                '{"blockNumber":',
+                "{'blockNumber':",
                 Strings.toString(responseBody.blockNumber),
-                ',"blockTimestamp":',
+                ",'blockTimestamp':",
                 Strings.toString(responseBody.blockTimestamp),
-                ',"sourceAddressHash":"',
+                ",'sourceAddressHash':'",
                 Base.toString(responseBody.sourceAddressHash),
-                '","sourceAddressesRoot":"',
+                "','sourceAddressesRoot':'",
                 Base.toString(responseBody.sourceAddressesRoot),
-                '","receivingAddressHash":"',
+                "','receivingAddressHash':'",
                 Base.toString(responseBody.receivingAddressHash),
-                '","intendedReceivingAddressHash":"',
+                "','intendedReceivingAddressHash':'",
                 Base.toString(responseBody.intendedReceivingAddressHash),
-                '","spentAmount":',
+                "','spentAmount':",
                 Strings.toStringSigned(responseBody.spentAmount),
-                ',"intendedSpentAmount":',
+                ",'intendedSpentAmount':",
                 Strings.toStringSigned(responseBody.intendedSpentAmount),
-                ',"receivedAmount":',
+                ",'receivedAmount':",
                 Strings.toStringSigned(responseBody.receivedAmount),
-                ',"intendedReceivedAmount":',
+                ",'intendedReceivedAmount':",
                 Strings.toStringSigned(responseBody.intendedReceivedAmount),
-                ',"standardPaymentReference":"',
+                ",'standardPaymentReference':'",
                 Base.toString(responseBody.standardPaymentReference),
-                '","oneToOne":',
+                "','oneToOne':",
                 Base.toString(responseBody.oneToOne),
-                ',"status":',
+                ",'status':",
                 Strings.toString(responseBody.status),
                 "}"
             );
