@@ -1,0 +1,4 @@
+# .husky/pre-commit
+
+pnpm format:check-solidity
+pnpm lint:check-solidity

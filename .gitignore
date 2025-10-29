@@ -7,3 +7,6 @@ out
 broadcast
 
 data
+node_modules
+
+.vscode/

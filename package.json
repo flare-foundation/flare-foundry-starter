@@ -1,0 +1,28 @@
+{
+  "name": "flare-foundry-starter",
+  "main": "index.js",
+  "repository": "https://github.com/flare-foundation/flare-foundry-starter",
+  "license": "MIT",
+  "scripts": {
+    "-----Linting-----": "echo \"Linting scripts\"",
+    "lint:fix-solidity": "solhint \"src/**/*.sol\" \"script/**/*.sol\" --fix",
+    "lint:check-solidity": "solhint \"src/**/*.sol\" \"script/**/*.sol\"",
+    "-----Formatting-----": "echo \"Formatting scripts\"",
+    "format:check-solidity": "prettier --check --plugin=prettier-plugin-solidity \"./**/*.sol\"",
+    "format:fix-solidity": "prettier --write --plugin=prettier-plugin-solidity \"./**/*.sol\"",
+    "-----Testing-----": "echo \"Testing scripts\"",
+    "test": "",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1.4.0",
+    "@flarenetwork/eslint-config-flare": "^0.0.1",
+    "@flarenetwork/prettier-config-flare": "^0.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "prettier": "^3.6.2",
+    "prettier-plugin-solidity": "^2.1.0",
+    "solhint": "^4.5.2"
+  },
+  "prettier": "@flarenetwork/prettier-config-flare"
+}
