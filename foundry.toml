@@ -1,6 +1,6 @@
 [profile.default]
 solc-version = "0.8.25"
-evm_version = "shanghai"
+evm_version = "cancun"
 src = "src"
 out = "out"
 libs = ["dependencies"]
