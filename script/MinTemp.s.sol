@@ -129,7 +129,7 @@ contract PrepareResolveRequest is Script {
             requestBody
         );
         string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
-        string memory url = string.concat(baseUrl, "Web2Json/prepareRequest");
+        string memory url = string.concat(baseUrl, "/Web2Json/prepareRequest");
         (, bytes memory data) = FdcBase.postAttestationRequest(url, headers, body);
         FdcBase.AttestationResponse memory response = FdcBase.parseAttestationRequest(data);
         require(response.abiEncodedRequest.length > 0, "Verifier returned empty request");

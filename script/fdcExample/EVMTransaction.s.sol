@@ -49,7 +49,7 @@ contract PrepareAttestationRequest is Script {
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
         string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
-        string memory url = string.concat(baseUrl, "verifier/", baseSourceName, "/EVMTransaction/prepareRequest");
+        string memory url = string.concat(baseUrl, "/verifier/", baseSourceName, "/EVMTransaction/prepareRequest");
 
         // Posting the attestation request
         (, bytes memory data) = url.post(headers, body);
@@ -148,7 +148,7 @@ contract RetrieveDataAndProof is Script {
         string memory url = string.concat(
             daLayerUrl,
             // "api/v0/fdc/get-proof-round-id-bytes"
-            "api/v1/fdc/proof-by-request-round-raw"
+            "/api/v1/fdc/proof-by-request-round-raw"
         );
 
         (, bytes memory data) = Base.postAttestationRequest(url, headers, body);
