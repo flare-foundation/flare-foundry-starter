@@ -71,7 +71,7 @@ contract PrepareAttestationRequest is Script {
         string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         string memory url = string.concat(
             baseUrl,
-            "verifier/",
+            "/verifier/",
             baseSourceName,
             "/",
             attestationTypeName,
@@ -88,7 +88,7 @@ contract PrepareAttestationRequest is Script {
             true
         );
     }
-    function prepareRequestBody() private pure returns (string memory) {
+    function prepareRequestBody() private view returns (string memory) {
         return
             string.concat(
                 "{'transactionHash':'",

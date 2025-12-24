@@ -257,7 +257,7 @@ library Base {
             requestBytesHex,
             "'}"
         );
-        string memory url = string.concat(daLayerUrl, "api/v1/fdc/proof-by-request-round-raw");
+        string memory url = string.concat(daLayerUrl, "/api/v1/fdc/proof-by-request-round-raw");
 
         bytes memory parsedProofData;
 

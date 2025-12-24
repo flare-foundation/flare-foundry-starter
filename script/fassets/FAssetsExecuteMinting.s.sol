@@ -51,7 +51,7 @@ contract ExecuteMinting is Script {
             "'}"
         );
 
-        string memory url = string.concat(verifierUrl, "verifier/", urlType, "/Payment/prepareRequest");
+        string memory url = string.concat(verifierUrl, "/verifier/", urlType, "/Payment/prepareRequest");
 
         bytes memory abiEncodedRequest = FdcBase.prepareFdcRequest(url, attestationType, sourceId, requestBody);
 
