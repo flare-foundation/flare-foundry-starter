@@ -13,9 +13,6 @@ import { IERC20Metadata } from "@openzeppelin-contracts/token/ERC20/extensions/I
  *
  * Usage:
  *   forge script script/firelight/Redeem.s.sol:Redeem --rpc-url $COSTON2_RPC_URL --broadcast
- *
- * Environment variables:
- *   PRIVATE_KEY - Required: Private key for signing transactions
  */
 contract Redeem is Script {
     address public constant FIRELIGHT_VAULT_ADDRESS = 0x91Bfe6A68aB035DFebb6A770FFfB748C03C0E40B;

@@ -6,9 +6,6 @@ import { IERC20 } from "@openzeppelin-contracts/token/ERC20/IERC20.sol";
 /**
  * @title IFirelightVault
  * @notice Minimal external interface for interacting with FirelightVault.
- *
- * @dev Mirrors the public/external surface (including custom delayed withdrawals)
- * so off-chain scripts (Foundry) and on-chain integrators can call it.
  */
 interface IFirelightVault {
     // --- Types ---
