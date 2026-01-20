@@ -1,4 +1,14 @@
+<p align="left">
+  <a href="https://flare.network/" target="blank"><img src="https://content.flare.network/Flare-2.svg" width="410" height="106" alt="Flare Logo" /></a>
+</p>
+
 # Flare Foundry Starter
+
+This is a starter kit for interacting with Flare blockchain using [Foundry](https://getfoundry.sh/).
+It provides example code for interacting with enshrined Flare protocol, and useful deployed contracts.
+It also demonstrates, how the official Flare smart contract periphery [package](https://www.npmjs.com/package/@flarenetwork/flare-periphery-contracts) can be used in your projects.
+
+## Getting started
 
 Install the project dependencies.
 
