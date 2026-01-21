@@ -37,6 +37,8 @@ coston = "${COSTON_RPC_URL}"
 coston2 = "${COSTON2_RPC_URL}"
 songbird = "${SONGBIRD_RPC_URL}"
 flare = "${FLARE_RPC_URL}"
+hyperliquidTestnet = "${HYPERLIQUID_TESTNET_RPC_URL}"
+sepolia = "${SEPOLIA_RPC_URL}"
 
 [etherscan]
 coston = { key = "${FLARE_RPC_API_KEY}", chain = 16, url = "${COSTON_RPC_URL}" }
