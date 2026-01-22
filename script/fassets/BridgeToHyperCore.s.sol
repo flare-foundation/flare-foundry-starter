@@ -6,8 +6,9 @@ import { IERC20 } from "@openzeppelin-contracts/token/ERC20/IERC20.sol";
 import { IAssetManager } from "flare-periphery/src/coston2/IAssetManager.sol";
 import { ContractRegistry } from "flare-periphery/src/coston2/ContractRegistry.sol";
 import { IFAssetOFTAdapter } from "../../src/fassets/interfaces/IFAssetOFTAdapter.sol";
-import { SendParam, MessagingFee, MessagingReceipt, OFTReceipt } from "../../src/fassets/interfaces/IOFT.sol";
-import { LayerZeroOptionsLib } from "../../src/fassets/lib/LayerZeroOptionsLib.sol";
+import { SendParam, OFTReceipt } from "@layerzerolabs/oft-evm/contracts/interfaces/IOFT.sol";
+import { MessagingFee, MessagingReceipt } from "@layerzerolabs/oapp-evm/contracts/oapp/OAppSender.sol";
+import { OptionsBuilder } from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 
 // Run with command:
 // solhint-disable-next-line max-line-length
@@ -19,6 +20,8 @@ import { LayerZeroOptionsLib } from "../../src/fassets/lib/LayerZeroOptionsLib.s
  * @dev Uses LayerZero with compose to trigger HyperliquidComposer on HyperEVM
  */
 contract BridgeToHyperCore is Script {
+    using OptionsBuilder for bytes;
+
     // Configuration constants
     address public constant COSTON2_OFT_ADAPTER = 0xCd3d2127935Ae82Af54Fc31cCD9D3440dbF46639;
     uint32 public constant HYPERLIQUID_EID = 40362; // HYPERLIQUID_V2_TESTNET
@@ -58,7 +61,10 @@ contract BridgeToHyperCore is Script {
         bytes memory composeMsg = abi.encode(amountToBridge, sender);
 
         // Build LayerZero options with compose
-        bytes memory options = LayerZeroOptionsLib.buildOptions(EXECUTOR_GAS, 0, COMPOSE_GAS);
+        bytes memory options = OptionsBuilder
+            .newOptions()
+            .addExecutorLzReceiveOption(EXECUTOR_GAS, 0)
+            .addExecutorLzComposeOption(0, COMPOSE_GAS, 0);
 
         // Build send parameters - send to HyperliquidComposer with compose message
         SendParam memory sendParam = SendParam({

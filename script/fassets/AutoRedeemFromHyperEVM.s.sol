@@ -2,8 +2,10 @@
 pragma solidity ^0.8.25;
 
 import { Script } from "forge-std/Script.sol";
-import { IOFT, SendParam, MessagingFee, MessagingReceipt, OFTReceipt } from "../../src/fassets/interfaces/IOFT.sol";
-import { LayerZeroOptionsLib } from "../../src/fassets/lib/LayerZeroOptionsLib.sol";
+import { IERC20 } from "@openzeppelin-contracts/token/ERC20/IERC20.sol";
+import { IOFT, SendParam, OFTReceipt } from "@layerzerolabs/oft-evm/contracts/interfaces/IOFT.sol";
+import { MessagingFee, MessagingReceipt } from "@layerzerolabs/oapp-evm/contracts/oapp/OAppSender.sol";
+import { OptionsBuilder } from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 
 // Run with command:
 // solhint-disable-next-line max-line-length
@@ -15,6 +17,8 @@ import { LayerZeroOptionsLib } from "../../src/fassets/lib/LayerZeroOptionsLib.s
  * @dev Uses LayerZero compose to trigger automatic redemption on Coston2
  */
 contract AutoRedeemFromHyperEVM is Script {
+    using OptionsBuilder for bytes;
+
     // Configuration constants
     uint32 public constant COSTON2_EID = 40294; // FLARE_V2_TESTNET
     address public constant HYPERLIQUID_FXRP_OFT = 0x14bfb521e318fc3d5e92A8462C65079BC7d4284c;
@@ -41,15 +45,18 @@ contract AutoRedeemFromHyperEVM is Script {
         // Connect to OFT
         IOFT oft = IOFT(HYPERLIQUID_FXRP_OFT);
 
-        // Check balance
-        uint256 balance = oft.balanceOf(sender);
+        // Check balance using the underlying token
+        uint256 balance = IERC20(oft.token()).balanceOf(sender);
         require(balance >= amountToSend, "Insufficient FXRP balance");
 
         // Build compose message: (amountToSend, underlyingAddress, redeemer)
         bytes memory composeMsg = abi.encode(amountToSend, xrpAddress, sender);
 
         // Build LayerZero options with compose
-        bytes memory options = LayerZeroOptionsLib.buildOptions(EXECUTOR_GAS, 0, COMPOSE_GAS);
+        bytes memory options = OptionsBuilder
+            .newOptions()
+            .addExecutorLzReceiveOption(EXECUTOR_GAS, 0)
+            .addExecutorLzComposeOption(0, COMPOSE_GAS, 0);
 
         // Build send parameters
         SendParam memory sendParam = SendParam({
