@@ -1,0 +1,3 @@
+[submodule "dependencies/lz-address-book"]
+	path = dependencies/lz-address-book
+	url = https://github.com/LayerZero-Labs/lz-address-book
