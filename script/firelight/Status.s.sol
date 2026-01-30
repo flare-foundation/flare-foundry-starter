@@ -43,7 +43,14 @@ contract Status is Script {
         logVaultBalances(totalAssets, totalSupply, assetSymbol, assetDecimals);
 
         // Log period configuration
-        logPeriodConfiguration(pcLen, currentPeriod, currentPeriodStart, currentPeriodEnd, nextPeriodEnd, currentPeriodConfig);
+        logPeriodConfiguration(
+            pcLen,
+            currentPeriod,
+            currentPeriodStart,
+            currentPeriodEnd,
+            nextPeriodEnd,
+            currentPeriodConfig
+        );
 
         // Get user info from env if available
         address account = vm.envOr("ACCOUNT", address(0));
