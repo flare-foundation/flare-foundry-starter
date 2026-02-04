@@ -41,8 +41,9 @@ flare = "${FLARE_RPC_URL}"
 hyperliquidTestnet = "${HYPERLIQUID_TESTNET_RPC_URL}"
 sepolia = "${SEPOLIA_RPC_URL}"
 
-[etherscan]
-coston = { key = "${FLARE_RPC_API_KEY}", chain = 16, url = "${COSTON_RPC_URL}" }
-coston2 = { key = "${FLARE_RPC_API_KEY}", chain = 114, url = "${COSTON2_RPC_URL}" }
-songbird = { key = "${FLARE_RPC_API_KEY}", chain = 19, url = "${SONGBIRD_RPC_URL}" }
-flare = { key = "${FLARE_RPC_API_KEY}", chain = 14, url = "${FLARE_RPC_URL}" }
+# Blockscout verification — no API key needed
+# Use: --verifier blockscout --verifier-url <explorer>/api/
+# Coston:  https://coston-explorer.flare.network/api/
+# Coston2: https://coston2-explorer.flare.network/api/
+# Songbird: https://songbird-explorer.flare.network/api/
+# Flare:   https://flare-explorer.flare.network/api/

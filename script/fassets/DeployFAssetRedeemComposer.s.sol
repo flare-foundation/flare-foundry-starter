@@ -6,7 +6,7 @@ import { FAssetRedeemComposer } from "../../src/fassets/FAssetRedeemComposer.sol
 
 // Run with command:
 // solhint-disable-next-line max-line-length
-// forge script script/fassets/DeployFAssetRedeemComposer.s.sol:DeployFAssetRedeemComposer --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API
+// forge script script/fassets/DeployFAssetRedeemComposer.s.sol:DeployFAssetRedeemComposer --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API
 
 contract DeployFAssetRedeemComposer is Script {
     // LayerZero Endpoint V2 on Coston2

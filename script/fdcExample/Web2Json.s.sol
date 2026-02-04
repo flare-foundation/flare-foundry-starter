@@ -106,7 +106,7 @@ contract PrepareAttestationRequest is Script {
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/fdcExample/Web2Json.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -135,7 +135,7 @@ contract SubmitAttestationRequest is Script {
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/fdcExample/Web2Json.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -184,7 +184,7 @@ contract RetrieveDataAndProof is Script {
 }
 
 // solhint-disable-next-line max-line-length
-// forge script script/fdcExample/Web2Json.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
+// forge script script/fdcExample/Web2Json.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API --ffi
 
 contract DeployContract is Script {
     function run() external {
@@ -206,7 +206,7 @@ contract DeployContract is Script {
 }
 
 // solhint-disable-next-line max-line-length
-// forge script script/fdcExample/Web2Json.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+// forge script script/fdcExample/Web2Json.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract InteractWithContract is Script {
     function run() external {

@@ -6,7 +6,7 @@ import { FAssetsSettings } from "../../src/fassets/FAssetsSettings.sol";
 
 // Run with command
 // solhint-disable-next-line max-line-length
-// forge script script/fassets/FAssetsSettings.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
+// forge script script/fassets/FAssetsSettings.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API --ffi
 
 contract Deploy is Script {
     function run() external {
