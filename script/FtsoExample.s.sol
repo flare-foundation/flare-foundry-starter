@@ -7,9 +7,9 @@ import { FtsoExample } from "src/FtsoExample.sol";
 
 // Run with command
 //      forge script script/FtsoExample.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify
-//      forge script script/FtsoExample.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --resume --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/114/etherscan/api
+//      forge script script/FtsoExample.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --resume --verify --verifier-url $COSTON2_FLARE_EXPLORER_API
 
-//      forge script script/FtsoExample.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key "X" --broadcast --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/114/etherscan/api
+//      forge script script/FtsoExample.s.sol:Deploy --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key "X" --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API
 
 contract Deploy is Script {
     FtsoExample public ftso;

@@ -1,0 +1,8 @@
+{
+  "addresses": {
+    "boringVault": "0xEf9e646eBEC675ba52c5F5aeA116b2930E3A32Bf",
+    "accountant": "0x7cd6F1BA7801a359734df34638f6d2a7944DB5CD",
+    "teller": "0x28f14315c139161634CeeBf05A4b850212fEa684",
+    "baseToken": "0xc12a4e8625629A741B76EeBE36170dB526914056"
+  }
+}
