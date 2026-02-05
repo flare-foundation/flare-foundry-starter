@@ -39,8 +39,11 @@ contract Claim is Script {
         uint256 currentPeriod = logPeriodInfo(vault);
 
         // Find claimable periods (only past periods can be claimed)
-        (uint256[] memory claimablePeriods, uint256[] memory withdrawalAmounts, uint256 count) =
-            findClaimablePeriods(vault, account, currentPeriod);
+        (uint256[] memory claimablePeriods, uint256[] memory withdrawalAmounts, uint256 count) = findClaimablePeriods(
+            vault,
+            account,
+            currentPeriod
+        );
 
         // Log claimable periods
         logClaimablePeriods(claimablePeriods, withdrawalAmounts, count, symbol, assetDecimals);
@@ -152,12 +155,7 @@ contract Claim is Script {
         console.log("  Formatted:", formatDecimals(totalWithdrawals, assetDecimals), symbol);
     }
 
-    function executeClaim(
-        IFirelightVault vault,
-        uint256 period,
-        string memory symbol,
-        uint8 assetDecimals
-    ) internal {
+    function executeClaim(IFirelightVault vault, uint256 period, string memory symbol, uint8 assetDecimals) internal {
         try vault.claimWithdraw(period) returns (uint256 claimedAssets) {
             console.log("Claimed period", period, ":", claimedAssets);
             console.log("  Formatted:", formatDecimals(claimedAssets, assetDecimals), symbol);
