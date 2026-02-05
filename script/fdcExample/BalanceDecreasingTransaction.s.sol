@@ -71,11 +71,11 @@ contract PrepareAttestationRequest is Script {
     ) private pure returns (string memory) {
         return
             string.concat(
-                "{'transactionId': '",
+                '{"transactionId": "',
                 _transactionId,
-                "','sourceAddressIndicator': '",
+                '","sourceAddressIndicator": "',
                 _sourceAddressIndicator,
-                "'}"
+                '"}'
             );
     }
 }
@@ -130,7 +130,7 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(

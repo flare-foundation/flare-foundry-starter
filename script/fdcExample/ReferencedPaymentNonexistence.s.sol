@@ -89,23 +89,23 @@ contract PrepareAttestationRequest is Script {
     ) private pure returns (string memory) {
         return
             string.concat(
-                "{'minimalBlockNumber': '",
+                '{"minimalBlockNumber": "',
                 minimalBlockNumber,
-                "','deadlineBlockNumber': '",
+                '","deadlineBlockNumber": "',
                 deadlineBlockNumber,
-                "','deadlineTimestamp': '",
+                '","deadlineTimestamp": "',
                 deadlineTimestamp,
-                "','destinationAddressHash': '",
+                '","destinationAddressHash": "',
                 destinationAddressHash,
-                "','amount': '",
+                '","amount": "',
                 amount,
-                "','standardPaymentReference': '",
+                '","standardPaymentReference": "',
                 standardPaymentReference,
-                "','checkSourceAddresses': '",
+                '","checkSourceAddresses": "',
                 checkSourceAddresses,
-                "','sourceAddressesRoot': '",
+                '","sourceAddressesRoot": "',
                 sourceAddressesRoot,
-                "'}"
+                '"}'
             );
     }
 }
@@ -160,7 +160,7 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(

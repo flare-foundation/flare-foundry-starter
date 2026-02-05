@@ -73,19 +73,15 @@ contract PrepareAttestationRequest is Script {
     ) private pure returns (string memory) {
         return
             string.concat(
-                "{'transactionHash': ",
-                "'",
+                '{"transactionHash": "',
                 transactionHash,
-                "'",
-                ", 'requiredConfirmations': ",
-                "'",
+                '", "requiredConfirmations": "',
                 requiredConfirmations,
-                "'",
-                ", 'provideInput': ",
+                '", "provideInput": ',
                 provideInput,
-                ", 'listEvents': ",
+                ', "listEvents": ',
                 listEvents,
-                ", 'logIndices': ",
+                ', "logIndices": ',
                 logIndices,
                 "}"
             );
@@ -142,7 +138,7 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(

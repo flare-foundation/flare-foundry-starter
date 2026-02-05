@@ -27,12 +27,12 @@ contract PrepareAttestationRequest is Script {
     string public headers = "";
     string public queryParams = "{}";
     string public body = "{}";
+    // solhint-disable-next-line max-line-length
     string public postProcessJq =
-        // solhint-disable-next-line max-line-length
-        "{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\'/\\') | .[-1] | tonumber)}";
+        '{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\"/\\") | .[-1] | tonumber)}';
+    // solhint-disable-next-line max-line-length
     string public abiSignature =
-        // solhint-disable-next-line max-line-length
-        "{\\'components\\': [{\\'internalType\\': \\'string\\', \\'name\\': \\'name\\', \\'type\\': \\'string\\'},{\\'internalType\\': \\'uint256\\', \\'name\\': \\'height\\', \\'type\\': \\'uint256\\'},{\\'internalType\\': \\'uint256\\', \\'name\\': \\'mass\\', \\'type\\': \\'uint256\\'},{\\'internalType\\': \\'uint256\\', \\'name\\': \\'numberOfFilms\\', \\'type\\': \\'uint256\\'},{\\'internalType\\': \\'uint256\\', \\'name\\': \\'uid\\', \\'type\\': \\'uint256\\'}],\\'name\\': \\'task\\',\\'type\\': \\'tuple\\'}";
+        '{\\"components\\": [{\\"internalType\\": \\"string\\", \\"name\\": \\"name\\", \\"type\\": \\"string\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"height\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"mass\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"numberOfFilms\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}],\\"name\\": \\"task\\",\\"type\\": \\"tuple\\"}';
 
     string public sourceName = "PublicWeb2";
 
@@ -57,7 +57,7 @@ contract PrepareAttestationRequest is Script {
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
-        string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
+        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         string memory url = string.concat(baseUrl, "/Web2Json/prepareRequest");
 
         // Posting the attestation request
@@ -85,21 +85,21 @@ contract PrepareAttestationRequest is Script {
     ) private pure returns (string memory) {
         return
             string.concat(
-                "{'url': '",
+                '{"url": "',
                 url,
-                "','httpMethod': '",
+                '","httpMethod": "',
                 httpMethod,
-                "','headers': '",
+                '","headers": "',
                 headers,
-                "','queryParams': '",
+                '","queryParams": "',
                 queryParams,
-                "','body': '",
+                '","body": "',
                 body,
-                "','postProcessJq': '",
+                '","postProcessJq": "',
                 postProcessJq,
-                "','abiSignature': '",
+                '","abiSignature": "',
                 abiSignature,
-                "'}"
+                '"}'
             );
     }
 }
@@ -154,7 +154,7 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(

@@ -61,7 +61,7 @@ contract PrepareAttestationRequest is Script {
         );
     }
     function prepareRequestBody(string memory addressStr) private pure returns (string memory) {
-        return string.concat("{'addressStr': '", addressStr, "'}");
+        return string.concat('{"addressStr": "', addressStr, '"}');
     }
 }
 
@@ -115,7 +115,7 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(

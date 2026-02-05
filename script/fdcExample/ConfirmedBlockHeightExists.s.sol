@@ -66,7 +66,7 @@ contract PrepareAttestationRequest is Script {
         string memory blockNumber,
         string memory queryWindow
     ) private pure returns (string memory) {
-        return string.concat("{'blockNumber': '", blockNumber, "','queryWindow': '", queryWindow, "'}");
+        return string.concat('{"blockNumber": "', blockNumber, '","queryWindow": "', queryWindow, '"}');
     }
 }
 
@@ -120,7 +120,7 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(
