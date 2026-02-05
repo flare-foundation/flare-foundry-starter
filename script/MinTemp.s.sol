@@ -27,7 +27,8 @@ function _getAgency() view returns (MinTempAgency) {
     return MinTempAgency(agencyAddress);
 }
 
-//      forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API
+// solhint-disable-next-line max-line-length
+// forge script script/MinTemp.s.sol:DeployAgency --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API
 contract DeployAgency is Script {
     function run() external {
         vm.createDir(dirPath, true);

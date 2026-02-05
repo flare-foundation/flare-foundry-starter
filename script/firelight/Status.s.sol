@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+/* solhint-disable no-console */
 import { Script, console } from "forge-std/Script.sol";
 import { IFirelightVault } from "../../src/firelight/IFirelightVault.sol";
 import { IERC20Metadata } from "@openzeppelin-contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -63,55 +64,7 @@ contract Status is Script {
         }
     }
 
-    function logAssetInfo(address asset, string memory assetSymbol, uint8 assetDecimals) internal pure {
-        console.log("\n=== Asset ===");
-        console.log("Asset address:", asset);
-        console.log("Asset symbol:", assetSymbol);
-        console.log("Asset decimals:", uint256(assetDecimals));
-    }
-
-    function logVaultBalances(
-        uint256 totalAssets,
-        uint256 totalSupply,
-        string memory assetSymbol,
-        uint8 assetDecimals
-    ) internal pure {
-        console.log("\n=== Vault Balances ===");
-        console.log("Total assets (excl. pending withdrawals):", totalAssets);
-        console.log("  Formatted:", formatDecimals(totalAssets, assetDecimals), assetSymbol);
-        console.log("Total supply (shares):", totalSupply);
-        console.log("  Formatted:", formatDecimals(totalSupply, assetDecimals), "shares");
-
-        // Calculate exchange rate (assets per share)
-        if (totalSupply != 0) {
-            uint256 precision = 10 ** assetDecimals;
-            uint256 rate = (totalAssets * precision) / totalSupply;
-            console.log("Exchange rate:", formatDecimals(rate, assetDecimals), string.concat(assetSymbol, "/share"));
-        } else {
-            console.log("Exchange rate: N/A (no shares minted)");
-        }
-    }
-
-    function logPeriodConfiguration(
-        uint256 pcLen,
-        uint256 currentPeriod,
-        uint48 currentPeriodStart,
-        uint48 currentPeriodEnd,
-        uint48 nextPeriodEnd,
-        IFirelightVault.PeriodConfiguration memory currentPeriodConfig
-    ) internal pure {
-        console.log("\n=== Period Configuration ===");
-        console.log("Period configurations count:", pcLen);
-        console.log("Current period:", currentPeriod);
-        console.log("Current period start:", formatTimestamp(currentPeriodStart));
-        console.log("Current period end:", formatTimestamp(currentPeriodEnd));
-        console.log("Next period end:", formatTimestamp(nextPeriodEnd));
-        console.log("Current period config:");
-        console.log("  epoch:", uint256(currentPeriodConfig.epoch));
-        console.log("  duration:", uint256(currentPeriodConfig.duration));
-        console.log("  startingPeriod:", currentPeriodConfig.startingPeriod);
-    }
-
+    // internal view functions
     function logUserInfo(
         IFirelightVault vault,
         address account,
@@ -162,6 +115,56 @@ contract Status is Script {
                 console.log("  Formatted:", formatDecimals(prevWithdrawals, assetDecimals), assetSymbol);
             }
         }
+    }
+
+    // internal pure functions
+    function logAssetInfo(address asset, string memory assetSymbol, uint8 assetDecimals) internal pure {
+        console.log("\n=== Asset ===");
+        console.log("Asset address:", asset);
+        console.log("Asset symbol:", assetSymbol);
+        console.log("Asset decimals:", uint256(assetDecimals));
+    }
+
+    function logVaultBalances(
+        uint256 totalAssets,
+        uint256 totalSupply,
+        string memory assetSymbol,
+        uint8 assetDecimals
+    ) internal pure {
+        console.log("\n=== Vault Balances ===");
+        console.log("Total assets (excl. pending withdrawals):", totalAssets);
+        console.log("  Formatted:", formatDecimals(totalAssets, assetDecimals), assetSymbol);
+        console.log("Total supply (shares):", totalSupply);
+        console.log("  Formatted:", formatDecimals(totalSupply, assetDecimals), "shares");
+
+        // Calculate exchange rate (assets per share)
+        if (totalSupply != 0) {
+            uint256 precision = 10 ** assetDecimals;
+            uint256 rate = (totalAssets * precision) / totalSupply;
+            console.log("Exchange rate:", formatDecimals(rate, assetDecimals), string.concat(assetSymbol, "/share"));
+        } else {
+            console.log("Exchange rate: N/A (no shares minted)");
+        }
+    }
+
+    function logPeriodConfiguration(
+        uint256 pcLen,
+        uint256 currentPeriod,
+        uint48 currentPeriodStart,
+        uint48 currentPeriodEnd,
+        uint48 nextPeriodEnd,
+        IFirelightVault.PeriodConfiguration memory currentPeriodConfig
+    ) internal pure {
+        console.log("\n=== Period Configuration ===");
+        console.log("Period configurations count:", pcLen);
+        console.log("Current period:", currentPeriod);
+        console.log("Current period start:", formatTimestamp(currentPeriodStart));
+        console.log("Current period end:", formatTimestamp(currentPeriodEnd));
+        console.log("Next period end:", formatTimestamp(nextPeriodEnd));
+        console.log("Current period config:");
+        console.log("  epoch:", uint256(currentPeriodConfig.epoch));
+        console.log("  duration:", uint256(currentPeriodConfig.duration));
+        console.log("  startingPeriod:", currentPeriodConfig.startingPeriod);
     }
 
     function formatTimestamp(uint48 timestamp) internal pure returns (string memory) {

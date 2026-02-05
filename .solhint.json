@@ -27,7 +27,7 @@
     "not-rely-on-block-hash": "error",
     "not-rely-on-time": "off",
     "payable-fallback": "error",
-    "quotes": [ "error", "double" ],
+    "quotes": "off",
     "reentrancy": "error",
     "state-visibility": "error",
     "use-forbidden-name": "error",
