@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+/* solhint-disable max-line-length */
 import { Script } from "dependencies/forge-std-1.9.5/src/Script.sol";
 import { Surl } from "dependencies/surl-0.0.0/src/Surl.sol";
 import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
@@ -89,6 +90,26 @@ contract PrepareAttestationRequest is Script {
         );
     }
 
+    function _timestampToDate(uint256 timestamp) internal pure returns (uint256 year, uint256 month, uint256 day) {
+        uint256 z = timestamp / 86400 + 719468;
+        uint256 era = z / 146097;
+        uint256 doe = z - era * 146097;
+        uint256 yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+        year = yoe + era * 400;
+        uint256 doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+        uint256 mp = (5 * doy + 2) / 153;
+        day = doy - (153 * mp + 2) / 5 + 1;
+        month = mp < 10 ? mp + 3 : mp - 9;
+        if (month <= 2) year += 1;
+    }
+
+    function _padZero(uint256 n) internal pure returns (string memory) {
+        if (n < 10) {
+            return string.concat("0", Strings.toString(n));
+        }
+        return Strings.toString(n);
+    }
+
     function _prepareRequestBody(
         string memory url,
         string memory method,
@@ -116,26 +137,6 @@ contract PrepareAttestationRequest is Script {
                 abi_,
                 "'}"
             );
-    }
-
-    function _timestampToDate(uint256 timestamp) internal pure returns (uint256 year, uint256 month, uint256 day) {
-        uint256 z = timestamp / 86400 + 719468;
-        uint256 era = z / 146097;
-        uint256 doe = z - era * 146097;
-        uint256 yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-        year = yoe + era * 400;
-        uint256 doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-        uint256 mp = (5 * doy + 2) / 153;
-        day = doy - (153 * mp + 2) / 5 + 1;
-        month = mp < 10 ? mp + 3 : mp - 9;
-        if (month <= 2) year += 1;
-    }
-
-    function _padZero(uint256 n) internal pure returns (string memory) {
-        if (n < 10) {
-            return string.concat("0", Strings.toString(n));
-        }
-        return Strings.toString(n);
     }
 }
 

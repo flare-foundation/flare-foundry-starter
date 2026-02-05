@@ -53,7 +53,7 @@ contract DepositWorkflow is Script {
         uint8 assetDecimals = assetMeta.decimals();
         uint8 vaultDecimals = vault.decimals();
         string memory symbol = assetMeta.symbol();
-        uint256 ONE_SHARE = 10 ** vaultDecimals;
+        uint256 oneShare = 10 ** vaultDecimals;
         uint256 depositAmount = DEPOSIT_AMOUNT * (10 ** assetDecimals);
 
         console.log("=== Boring Vault Deposit Workflow ===");
@@ -83,12 +83,12 @@ contract DepositWorkflow is Script {
         console.log("");
         console.log("=== Step 3: Calculate Expected Shares ===");
         uint256 rate = accountant.getRateInQuote(ERC20(assetAddress));
-        uint256 expectedShares = (depositAmount * ONE_SHARE) / rate;
+        uint256 expectedShares = (depositAmount * oneShare) / rate;
         uint256 minimumShares = (expectedShares * (10000 - SLIPPAGE_BPS)) / 10000;
 
         console.log("Exchange rate:", rate / (10 ** assetDecimals), symbol, "per share");
-        console.log("Expected shares:", expectedShares / ONE_SHARE);
-        console.log("Minimum shares (with slippage):", minimumShares / ONE_SHARE);
+        console.log("Expected shares:", expectedShares / oneShare);
+        console.log("Minimum shares (with slippage):", minimumShares / oneShare);
         console.log("");
 
         // Check if teller is paused
@@ -97,7 +97,7 @@ contract DepositWorkflow is Script {
         // Execute deposit
         console.log("=== Step 4: Execute Deposit ===");
         uint256 sharesBefore = vault.balanceOf(user);
-        console.log("Shares before:", sharesBefore / ONE_SHARE);
+        console.log("Shares before:", sharesBefore / oneShare);
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -119,8 +119,8 @@ contract DepositWorkflow is Script {
         uint256 sharesAfter = vault.balanceOf(user);
         uint256 sharesReceived = sharesAfter - sharesBefore;
 
-        console.log("Shares after:", sharesAfter / ONE_SHARE);
-        console.log("Shares received:", sharesReceived / ONE_SHARE);
+        console.log("Shares after:", sharesAfter / oneShare);
+        console.log("Shares received:", sharesReceived / oneShare);
 
         // Check share lock
         uint256 shareUnlockTime = teller.shareUnlockTime(user);
