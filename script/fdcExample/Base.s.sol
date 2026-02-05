@@ -307,6 +307,16 @@ library Base {
     function parseAttestationRequest(bytes memory data) internal pure returns (AttestationResponse memory response) {
         string memory dataString = string(data);
 
+        // First extract just the status to check for errors
+        string memory status = abi.decode(vm.parseJson(dataString, ".status"), (string));
+
+        // If status is not VALID, return early with just the status (abiEncodedRequest will be empty)
+        if (keccak256(bytes(status)) != keccak256(bytes("VALID"))) {
+            response.status = status;
+            return response;
+        }
+
+        // For valid responses, decode the full struct
         bytes memory dataJson = vm.parseJson(dataString);
         response = abi.decode(dataJson, (AttestationResponse));
     }

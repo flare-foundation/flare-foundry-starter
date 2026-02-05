@@ -27,11 +27,11 @@ contract PrepareAttestationRequest is Script {
     string public headers = "";
     string public queryParams = "{}";
     string public body = "{}";
-    // solhint-disable-next-line max-line-length
     string public postProcessJq =
+        // solhint-disable-next-line max-line-length
         '{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\"/\\") | .[-1] | tonumber)}';
-    // solhint-disable-next-line max-line-length
     string public abiSignature =
+        // solhint-disable-next-line max-line-length
         '{\\"components\\": [{\\"internalType\\": \\"string\\", \\"name\\": \\"name\\", \\"type\\": \\"string\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"height\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"mass\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"numberOfFilms\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}],\\"name\\": \\"task\\",\\"type\\": \\"tuple\\"}';
 
     string public sourceName = "PublicWeb2";
@@ -64,6 +64,12 @@ contract PrepareAttestationRequest is Script {
         (, bytes memory data) = url.post(headers, body);
 
         Base.AttestationResponse memory response = Base.parseAttestationRequest(data);
+
+        // Check for a "VALID" response from the verifier
+        require(
+            keccak256(bytes(response.status)) == keccak256(bytes("VALID")),
+            string.concat("Verifier API error: ", response.status)
+        );
 
         // Writing abiEncodedRequest to a file
         Base.writeToFile(

@@ -28,7 +28,7 @@ contract PrepareAttestationRequest is Script {
     string public standardPaymentReference = "TODO";
     string public checkSourceAddresses = "TODO";
     string public sourceAddressesRoot = "TODO";
-    string public baseSourceName = "btc"; // Part of verifier URL
+    string public baseSourceName = "btc_testnet4"; // Part of verifier URL
     string public sourceName = "testBTC"; // Bitcoin chain ID
 
     function run() external {
@@ -57,7 +57,7 @@ contract PrepareAttestationRequest is Script {
         string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         string memory url = string.concat(
             baseUrl,
-            "verifier/",
+            "/verifier/",
             baseSourceName,
             "/",
             attestationTypeName,
@@ -68,6 +68,12 @@ contract PrepareAttestationRequest is Script {
         (, bytes memory data) = url.post(headers, body);
 
         Base.AttestationResponse memory response = Base.parseAttestationRequest(data);
+
+        // Check for a "VALID" response from the verifier
+        require(
+            keccak256(bytes(response.status)) == keccak256(bytes("VALID")),
+            string.concat("Verifier API error: ", response.status)
+        );
 
         // Writing abiEncodedRequest to a file
         Base.writeToFile(
@@ -165,8 +171,8 @@ contract RetrieveDataAndProof is Script {
         // Posting the proof request
         string memory url = string.concat(
             daLayerUrl,
-            // "api/v0/fdc/get-proof-round-id-bytes"
-            "api/v1/fdc/proof-by-request-round-raw"
+            // "/api/v0/fdc/get-proof-round-id-bytes"
+            "/api/v1/fdc/proof-by-request-round-raw"
         );
 
         (, bytes memory data) = Base.postAttestationRequest(url, headers, body);

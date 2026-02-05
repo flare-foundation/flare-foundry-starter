@@ -63,6 +63,12 @@ contract PrepareAttestationRequest is Script {
 
         Base.AttestationResponse memory response = Base.parseAttestationRequest(data);
 
+        // Check for a "VALID" response from the verifier
+        require(
+            keccak256(bytes(response.status)) == keccak256(bytes("VALID")),
+            string.concat("Verifier API error: ", response.status)
+        );
+
         // Writing abiEncodedRequest to a file
         Base.writeToFile(
             dirPath,
