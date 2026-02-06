@@ -29,10 +29,10 @@ contract PrepareAttestationRequest is Script {
     string public body = "{}";
     string public postProcessJq =
         // solhint-disable-next-line max-line-length
-        "{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\'/\\') | .[-1] | tonumber)}";
+        '{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split(\\"/\\") | .[-1] | tonumber)}';
     string public abiSignature =
         // solhint-disable-next-line max-line-length
-        "{\\'components\\': [{\\'internalType\\': \\'string\\', \\'name\\': \\'name\\', \\'type\\': \\'string\\'},{\\'internalType\\': \\'uint256\\', \\'name\\': \\'height\\', \\'type\\': \\'uint256\\'},{\\'internalType\\': \\'uint256\\', \\'name\\': \\'mass\\', \\'type\\': \\'uint256\\'},{\\'internalType\\': \\'uint256\\', \\'name\\': \\'numberOfFilms\\', \\'type\\': \\'uint256\\'},{\\'internalType\\': \\'uint256\\', \\'name\\': \\'uid\\', \\'type\\': \\'uint256\\'}],\\'name\\': \\'task\\',\\'type\\': \\'tuple\\'}";
+        '{\\"components\\": [{\\"internalType\\": \\"string\\", \\"name\\": \\"name\\", \\"type\\": \\"string\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"height\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"mass\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"numberOfFilms\\", \\"type\\": \\"uint256\\"},{\\"internalType\\": \\"uint256\\", \\"name\\": \\"uid\\", \\"type\\": \\"uint256\\"}],\\"name\\": \\"task\\",\\"type\\": \\"tuple\\"}';
 
     string public sourceName = "PublicWeb2";
 
@@ -57,13 +57,19 @@ contract PrepareAttestationRequest is Script {
 
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
-        string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
+        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         string memory url = string.concat(baseUrl, "/Web2Json/prepareRequest");
 
         // Posting the attestation request
         (, bytes memory data) = url.post(headers, body);
 
         Base.AttestationResponse memory response = Base.parseAttestationRequest(data);
+
+        // Check for a "VALID" response from the verifier
+        require(
+            keccak256(bytes(response.status)) == keccak256(bytes("VALID")),
+            string.concat("Verifier API error: ", response.status)
+        );
 
         // Writing abiEncodedRequest to a file
         Base.writeToFile(
@@ -85,28 +91,28 @@ contract PrepareAttestationRequest is Script {
     ) private pure returns (string memory) {
         return
             string.concat(
-                "{'url': '",
+                '{"url": "',
                 url,
-                "','httpMethod': '",
+                '","httpMethod": "',
                 httpMethod,
-                "','headers': '",
+                '","headers": "',
                 headers,
-                "','queryParams': '",
+                '","queryParams": "',
                 queryParams,
-                "','body': '",
+                '","body": "',
                 body,
-                "','postProcessJq': '",
+                '","postProcessJq": "',
                 postProcessJq,
-                "','abiSignature': '",
+                '","abiSignature": "',
                 abiSignature,
-                "'}"
+                '"}'
             );
     }
 }
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/fdcExample/Web2Json.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -135,7 +141,7 @@ contract SubmitAttestationRequest is Script {
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/fdcExample/Web2Json.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/Web2Json.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -154,7 +160,7 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(
@@ -184,7 +190,7 @@ contract RetrieveDataAndProof is Script {
 }
 
 // solhint-disable-next-line max-line-length
-// forge script script/fdcExample/Web2Json.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
+// forge script script/fdcExample/Web2Json.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API --ffi
 
 contract DeployContract is Script {
     function run() external {
@@ -206,7 +212,7 @@ contract DeployContract is Script {
 }
 
 // solhint-disable-next-line max-line-length
-// forge script script/fdcExample/Web2Json.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+// forge script script/fdcExample/Web2Json.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract InteractWithContract is Script {
     function run() external {

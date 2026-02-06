@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+/* solhint-disable no-console */
 import { Script, console } from "forge-std/Script.sol";
 import { IFirelightVault } from "../../src/firelight/IFirelightVault.sol";
 import { IERC20Metadata } from "@openzeppelin-contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -80,20 +81,17 @@ contract Claim is Script {
         vm.stopBroadcast();
     }
 
-    function logClaimInfo(
-        address account,
-        address assetAddress,
-        string memory symbol,
-        uint8 assetDecimals
-    ) internal pure {
-        console.log("=== Claim Withdrawals (ERC-4626) ===");
-        console.log("Sender:", account);
-        console.log("Vault:", FIRELIGHT_VAULT_ADDRESS);
-        console.log("Asset:", assetAddress);
-        console.log("Asset symbol:", symbol);
-        console.log("Asset decimals:", uint256(assetDecimals));
+    // internal (non-view, non-pure) functions
+    function executeClaim(IFirelightVault vault, uint256 period, string memory symbol, uint8 assetDecimals) internal {
+        try vault.claimWithdraw(period) returns (uint256 claimedAssets) {
+            console.log("Claimed period", period, ":", claimedAssets);
+            console.log("  Formatted:", formatDecimals(claimedAssets, assetDecimals), symbol);
+        } catch {
+            console.log("Skipped period", period, "(already claimed or not claimable)");
+        }
     }
 
+    // internal view functions
     function logPeriodInfo(IFirelightVault vault) internal view returns (uint256) {
         uint256 currentPeriod = vault.currentPeriod();
         uint48 currentPeriodEnd = vault.currentPeriodEnd();
@@ -130,6 +128,21 @@ contract Claim is Script {
         return (periods, withdrawalAmounts, count);
     }
 
+    // internal pure functions
+    function logClaimInfo(
+        address account,
+        address assetAddress,
+        string memory symbol,
+        uint8 assetDecimals
+    ) internal pure {
+        console.log("=== Claim Withdrawals (ERC-4626) ===");
+        console.log("Sender:", account);
+        console.log("Vault:", FIRELIGHT_VAULT_ADDRESS);
+        console.log("Asset:", assetAddress);
+        console.log("Asset symbol:", symbol);
+        console.log("Asset decimals:", uint256(assetDecimals));
+    }
+
     function logClaimablePeriods(
         uint256[] memory periods,
         uint256[] memory withdrawals,
@@ -153,15 +166,6 @@ contract Claim is Script {
 
         console.log("Total pending:", totalWithdrawals);
         console.log("  Formatted:", formatDecimals(totalWithdrawals, assetDecimals), symbol);
-    }
-
-    function executeClaim(IFirelightVault vault, uint256 period, string memory symbol, uint8 assetDecimals) internal {
-        try vault.claimWithdraw(period) returns (uint256 claimedAssets) {
-            console.log("Claimed period", period, ":", claimedAssets);
-            console.log("  Formatted:", formatDecimals(claimedAssets, assetDecimals), symbol);
-        } catch {
-            console.log("Skipped period", period, "(already claimed or not claimable)");
-        }
     }
 
     function formatTimestamp(uint48 timestamp) internal pure returns (string memory) {

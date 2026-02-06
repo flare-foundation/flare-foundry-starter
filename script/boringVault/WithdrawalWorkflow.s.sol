@@ -55,8 +55,8 @@ contract WithdrawalWorkflow is Script {
         uint8 assetDecimals = assetMeta.decimals();
         uint8 vaultDecimals = vault.decimals();
         string memory symbol = assetMeta.symbol();
-        uint256 ONE_SHARE = 10 ** vaultDecimals;
-        uint256 withdrawShares = WITHDRAW_SHARES * ONE_SHARE;
+        uint256 oneShare = 10 ** vaultDecimals;
+        uint256 withdrawShares = WITHDRAW_SHARES * oneShare;
 
         console.log("=== Boring Vault Withdrawal Workflow ===");
         console.log("");
@@ -70,7 +70,7 @@ contract WithdrawalWorkflow is Script {
         // Check share balance
         uint256 shareBalance = vault.balanceOf(user);
         console.log("=== Step 1: Check Share Balance ===");
-        console.log("Your share balance:", shareBalance / ONE_SHARE);
+        console.log("Your share balance:", shareBalance / oneShare);
         console.log("Withdraw amount:", WITHDRAW_SHARES, "shares");
 
         require(shareBalance >= withdrawShares, "Insufficient share balance! Deposit first.");
@@ -92,7 +92,7 @@ contract WithdrawalWorkflow is Script {
         // Calculate expected assets with slippage
         console.log("=== Step 3: Calculate Expected Assets ===");
         uint256 rate = accountant.getRateInQuote(ERC20(assetAddress));
-        uint256 expectedAssets = (withdrawShares * rate) / ONE_SHARE;
+        uint256 expectedAssets = (withdrawShares * rate) / oneShare;
         uint256 minimumAssets = (expectedAssets * (10000 - SLIPPAGE_BPS)) / 10000;
 
         console.log("Exchange rate:", rate / (10 ** assetDecimals), symbol, "per share");
@@ -109,7 +109,7 @@ contract WithdrawalWorkflow is Script {
         uint256 sharesBefore = vault.balanceOf(user);
 
         console.log("Assets before:", assetsBefore / (10 ** assetDecimals), symbol);
-        console.log("Shares before:", sharesBefore / ONE_SHARE);
+        console.log("Shares before:", sharesBefore / oneShare);
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -127,14 +127,14 @@ contract WithdrawalWorkflow is Script {
         uint256 sharesBurned = sharesBefore - sharesAfter;
 
         console.log("Assets after:", assetsAfter / (10 ** assetDecimals), symbol);
-        console.log("Shares after:", sharesAfter / ONE_SHARE);
+        console.log("Shares after:", sharesAfter / oneShare);
         console.log("");
         console.log("Assets received:", assetsReceived / (10 ** assetDecimals), symbol);
-        console.log("Shares burned:", sharesBurned / ONE_SHARE);
+        console.log("Shares burned:", sharesBurned / oneShare);
 
         // Calculate actual rate
         if (sharesBurned > 0) {
-            uint256 actualRate = (assetsReceived * ONE_SHARE) / sharesBurned;
+            uint256 actualRate = (assetsReceived * oneShare) / sharesBurned;
             console.log("Actual rate:", actualRate / (10 ** assetDecimals), symbol, "per share");
         }
 

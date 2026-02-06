@@ -81,6 +81,7 @@ contract MintNft is Script {
 
         // Calculate human-readable price
         uint256 absoluteExpo = expo < 0 ? uint256(uint32(-expo)) : uint256(uint32(expo));
+        // solhint-disable-next-line no-unused-vars
         uint256 decimalPrice = uint256(uint64(price));
 
         console.log("Raw price:", uint256(uint64(price)));

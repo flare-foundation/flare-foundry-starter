@@ -123,8 +123,8 @@ library Base {
      */
     function prepareHeaders(string memory apiKey) internal pure returns (string[] memory headers) {
         headers = new string[](2);
-        headers[0] = string.concat("'X-API-KEY': '", apiKey, "'");
-        headers[1] = "'Content-Type': 'application/json'";
+        headers[0] = string.concat("X-API-KEY: ", apiKey);
+        headers[1] = "Content-Type: application/json";
         return headers;
     }
 
@@ -142,11 +142,11 @@ library Base {
     ) internal pure returns (string memory) {
         return
             string.concat(
-                "{'attestationType': '",
+                '{"attestationType": "',
                 attestationType,
-                "', 'sourceId': '",
+                '", "sourceId": "',
                 sourceId,
-                "', 'requestBody': ",
+                '", "requestBody": ',
                 body,
                 "}"
             );
@@ -251,11 +251,11 @@ library Base {
 
         string[] memory headers = prepareHeaders(vm.envString("X_API_KEY"));
         string memory body = string.concat(
-            "{'votingRoundId':",
+            '{"votingRoundId":',
             Strings.toString(votingRoundId),
-            ",'requestBytes':'",
+            ',"requestBytes":"',
             requestBytesHex,
-            "'}"
+            '"}'
         );
         string memory url = string.concat(daLayerUrl, "/api/v1/fdc/proof-by-request-round-raw");
 
@@ -307,6 +307,16 @@ library Base {
     function parseAttestationRequest(bytes memory data) internal pure returns (AttestationResponse memory response) {
         string memory dataString = string(data);
 
+        // First extract just the status to check for errors
+        string memory status = abi.decode(vm.parseJson(dataString, ".status"), (string));
+
+        // If status is not VALID, return early with just the status (abiEncodedRequest will be empty)
+        if (keccak256(bytes(status)) != keccak256(bytes("VALID"))) {
+            response.status = status;
+            return response;
+        }
+
+        // For valid responses, decode the full struct
         bytes memory dataJson = vm.parseJson(dataString);
         response = abi.decode(dataJson, (AttestationResponse));
     }

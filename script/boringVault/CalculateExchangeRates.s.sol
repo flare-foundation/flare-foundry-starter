@@ -36,13 +36,13 @@ contract CalculateExchangeRates is Script {
         AccountantWithRateProviders accountant = AccountantWithRateProviders(accountantAddress);
 
         uint8 vaultDecimals = vault.decimals();
-        uint256 ONE_SHARE = 10 ** vaultDecimals;
+        uint256 oneShare = 10 ** vaultDecimals;
 
         console.log("=== Calculate Exchange Rates ===");
         console.log("");
         console.log("Vault:", vaultAddress);
         console.log("Vault Decimals:", vaultDecimals);
-        console.log("ONE_SHARE:", ONE_SHARE);
+        console.log("oneShare:", oneShare);
         console.log("Accountant:", accountantAddress);
         console.log("");
 
@@ -51,14 +51,14 @@ contract CalculateExchangeRates is Script {
         console.log("Base Asset:", address(baseAsset));
         console.log("");
 
-        console.log("=== Understanding ONE_SHARE ===");
+        console.log("=== Understanding oneShare ===");
         console.log("");
-        console.log("ONE_SHARE represents 1.0 full share in the contract's internal representation.");
-        console.log("All rate calculations use ONE_SHARE as the base unit.");
+        console.log("oneShare represents 1.0 full share in the contract's internal representation.");
+        console.log("All rate calculations use oneShare as the base unit.");
         console.log("");
         console.log("Formulas:");
-        console.log("- Assets to Shares: shares = (assetAmount * ONE_SHARE) / rate");
-        console.log("- Shares to Assets: assets = (shareAmount * rate) / ONE_SHARE");
+        console.log("- Assets to Shares: shares = (assetAmount * oneShare) / rate");
+        console.log("- Shares to Assets: assets = (shareAmount * rate) / oneShare");
         console.log("");
         console.log("Always use integer arithmetic - never floating point!");
     }

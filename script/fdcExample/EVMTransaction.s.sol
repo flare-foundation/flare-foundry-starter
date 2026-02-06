@@ -56,6 +56,12 @@ contract PrepareAttestationRequest is Script {
 
         Base.AttestationResponse memory response = Base.parseAttestationRequest(data);
 
+        // Check for a "VALID" response from the verifier
+        require(
+            keccak256(bytes(response.status)) == keccak256(bytes("VALID")),
+            string.concat("Verifier API error: ", response.status)
+        );
+
         // Writing abiEncodedRequest to a file
         Base.writeToFile(
             dirPath,
@@ -73,19 +79,15 @@ contract PrepareAttestationRequest is Script {
     ) private pure returns (string memory) {
         return
             string.concat(
-                "{'transactionHash': ",
-                "'",
+                '{"transactionHash": "',
                 transactionHash,
-                "'",
-                ", 'requiredConfirmations': ",
-                "'",
+                '", "requiredConfirmations": "',
                 requiredConfirmations,
-                "'",
-                ", 'provideInput': ",
+                '", "provideInput": ',
                 provideInput,
-                ", 'listEvents': ",
+                ', "listEvents": ',
                 listEvents,
-                ", 'logIndices': ",
+                ', "logIndices": ',
                 logIndices,
                 "}"
             );
@@ -94,7 +96,7 @@ contract PrepareAttestationRequest is Script {
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/fdcExample/EVMTransaction.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/EVMTransaction.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -123,7 +125,7 @@ contract SubmitAttestationRequest is Script {
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/fdcExample/EVMTransaction.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/EVMTransaction.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -142,7 +144,7 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(
@@ -172,7 +174,7 @@ contract RetrieveDataAndProof is Script {
 }
 
 // solhint-disable-next-line max-line-length
-// forge script script/fdcExample/EVMTransaction.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
+// forge script script/fdcExample/EVMTransaction.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API --ffi
 
 contract DeployContract is Script {
     function run() external {
@@ -194,7 +196,7 @@ contract DeployContract is Script {
 }
 
 // solhint-disable-next-line max-line-length
-// forge script script/fdcExample/EVMTransaction.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+// forge script script/fdcExample/EVMTransaction.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract InteractWithContract is Script {
     function run() external {

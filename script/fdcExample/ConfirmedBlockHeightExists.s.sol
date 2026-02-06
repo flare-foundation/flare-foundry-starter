@@ -22,7 +22,7 @@ contract PrepareAttestationRequest is Script {
     // Setting request data
     string public blockNumber = "3614118";
     string public queryWindow = "1"; // in seconds
-    string public baseSourceName = "btc"; // Part of verifier URL
+    string public baseSourceName = "btc_testnet4"; // Part of verifier URL
     string public sourceName = "testBTC"; // Bitcoin chain ID
 
     function run() external {
@@ -42,7 +42,7 @@ contract PrepareAttestationRequest is Script {
         string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         string memory url = string.concat(
             baseUrl,
-            "verifier/",
+            "/verifier/",
             baseSourceName,
             "/",
             attestationTypeName,
@@ -53,6 +53,12 @@ contract PrepareAttestationRequest is Script {
         (, bytes memory data) = url.post(headers, body);
 
         Base.AttestationResponse memory response = Base.parseAttestationRequest(data);
+
+        // Check for a "VALID" response from the verifier
+        require(
+            keccak256(bytes(response.status)) == keccak256(bytes("VALID")),
+            string.concat("Verifier API error: ", response.status)
+        );
 
         // Writing abiEncodedRequest to a file
         Base.writeToFile(
@@ -66,13 +72,13 @@ contract PrepareAttestationRequest is Script {
         string memory blockNumber,
         string memory queryWindow
     ) private pure returns (string memory) {
-        return string.concat("{'blockNumber': '", blockNumber, "','queryWindow': '", queryWindow, "'}");
+        return string.concat('{"blockNumber": "', blockNumber, '","queryWindow": "', queryWindow, '"}');
     }
 }
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:SubmitAttestationRequest --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract SubmitAttestationRequest is Script {
     using Surl for *;
@@ -101,7 +107,7 @@ contract SubmitAttestationRequest is Script {
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+//      forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:RetrieveDataAndProof --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract RetrieveDataAndProof is Script {
     using Surl for *;
@@ -120,13 +126,13 @@ contract RetrieveDataAndProof is Script {
 
         // Preparing the proof request
         string[] memory headers = Base.prepareHeaders(apiKey);
-        string memory body = string.concat("{'votingRoundId':", votingRoundId, ",'requestBytes':'", requestBytes, "'}");
+        string memory body = string.concat('{"votingRoundId":', votingRoundId, ',"requestBytes":"', requestBytes, '"}');
 
         // Posting the proof request
         string memory url = string.concat(
             daLayerUrl,
-            // "api/v0/fdc/get-proof-round-id-bytes"
-            "api/v1/fdc/proof-by-request-round-raw"
+            // "/api/v0/fdc/get-proof-round-id-bytes"
+            "/api/v1/fdc/proof-by-request-round-raw"
         );
 
         (, bytes memory data) = Base.postAttestationRequest(url, headers, body);
@@ -156,14 +162,14 @@ contract RetrieveDataAndProof is Script {
 }
 
 // solhint-disable-next-line max-line-length
-// forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify --verifier-url $COSTON2_FLARE_EXPLORER_API --ffi
+// forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:DeployContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API --ffi
 
 contract DeployContract is Script {
     function run() external {}
 }
 
 // solhint-disable-next-line max-line-length
-// forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --ffi
+// forge script script/fdcExample/ConfirmedBlockHeightExists.s.sol:InteractWithContract --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --ffi
 
 contract InteractWithContract is Script {
     function run() external {}

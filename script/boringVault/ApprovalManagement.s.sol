@@ -5,8 +5,6 @@ pragma solidity ^0.8.25;
 import { Script, console } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 import { IERC20 } from "@openzeppelin-contracts/token/ERC20/IERC20.sol";
-import { BoringVault } from "../../src/boringVault/BoringVault.sol";
-import { TellerWithMultiAssetSupport } from "../../src/boringVault/TellerWithMultiAssetSupport.sol";
 
 /**
  * @title ApprovalManagement

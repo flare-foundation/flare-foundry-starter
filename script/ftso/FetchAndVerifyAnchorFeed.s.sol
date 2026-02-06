@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 /* solhint-disable no-console */
+/* solhint-disable ordering */
 import { Script, console } from "forge-std/Script.sol";
 import { Surl } from "dependencies/surl-0.0.0/src/Surl.sol";
 // solhint-disable-next-line no-unused-import
@@ -82,6 +83,12 @@ contract FetchAnchorFeeds is Script {
         return result;
     }
 
+    function _ensureDirectoryExists() internal view {
+        if (!vm.isDir(ANCHOR_DIR_PATH)) {
+            revert(string.concat("Please create directory: ", ANCHOR_DIR_PATH));
+        }
+    }
+
     function _bytes21ToHexString(bytes21 value) internal pure returns (string memory) {
         bytes memory alphabet = "0123456789abcdef";
         bytes memory str = new bytes(44);
@@ -92,12 +99,6 @@ contract FetchAnchorFeeds is Script {
             str[3 + i * 2] = alphabet[uint8(value[i] & 0x0f)];
         }
         return string(str);
-    }
-
-    function _ensureDirectoryExists() internal view {
-        if (!vm.isDir(ANCHOR_DIR_PATH)) {
-            revert(string.concat("Please create directory: ", ANCHOR_DIR_PATH));
-        }
     }
 }
 

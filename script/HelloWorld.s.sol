@@ -6,7 +6,7 @@ import { HelloWorld } from "src/HelloWorld.sol";
 
 // Run with command
 // solhint-disable-next-line max-line-length
-//      forge script script/HelloWorld.s.sol:Deploy "Coruscant" --sig "run(string)" --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --etherscan-api-key $FLARE_RPC_API_KEY --broadcast --verify
+//      forge script script/HelloWorld.s.sol:Deploy "Coruscant" --sig "run(string)" --private-key $PRIVATE_KEY --rpc-url $COSTON2_RPC_URL --broadcast --verify --verifier blockscout --verifier-url $COSTON2_EXPLORER_API
 
 contract Deploy is Script {
     HelloWorld public helloWorld;

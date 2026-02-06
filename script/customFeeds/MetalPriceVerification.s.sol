@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+/* solhint-disable max-line-length */
 import { Script } from "dependencies/forge-std-1.9.5/src/Script.sol";
 import { Surl } from "dependencies/surl-0.0.0/src/Surl.sol";
 import { Strings } from "@openzeppelin-contracts/utils/Strings.sol";
