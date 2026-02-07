@@ -58,7 +58,7 @@ contract PrepareAttestationRequest is Script {
         // TODO change key in .env
         // string memory baseUrl = "https://testnet-verifier-fdc-test.aflabs.org/";
         string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
-        string memory url = string.concat(baseUrl, "/Web2Json/prepareRequest");
+        string memory url = string.concat(baseUrl, "/verifier/web2/Web2Json/prepareRequest");
 
         // Posting the attestation request
         (, bytes memory data) = url.post(headers, body);

@@ -67,8 +67,8 @@ contract PrepareAttestationRequest is Script {
             requestBody
         );
 
-        string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
-        string memory url = string.concat(baseUrl, "/Web2Json/prepareRequest");
+        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
+        string memory url = string.concat(baseUrl, "/verifier/web2/Web2Json/prepareRequest");
 
         // Posting the attestation request
         (, bytes memory data) = url.post(hdrs, bdy);

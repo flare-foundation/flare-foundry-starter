@@ -119,7 +119,10 @@ contract PrepareResolveRequest is Script {
 
     function _prepareFdcRequest(int256 lat, int256 lon) private returns (bytes memory) {
         string memory requestBody = _prepareApiRequestBody(lat, lon);
-        string memory url = string.concat(vm.envString("WEB2JSON_VERIFIER_URL_TESTNET"), "/Web2Json/prepareRequest");
+        string memory url = string.concat(
+            vm.envString("VERIFIER_URL_TESTNET"),
+            "/verifier/web2/Web2Json/prepareRequest"
+        );
 
         (string[] memory headers, string memory body) = FdcBase.prepareAttestationRequest(
             FdcBase.toUtf8HexString(attestationTypeName),

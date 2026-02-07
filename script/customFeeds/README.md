@@ -9,9 +9,10 @@ forge install
 ```
 
 Ensure you have:
+
 - Access to Coston2 testnet RPC
 - `PRIVATE_KEY` set in your environment
-- `WEB2JSON_VERIFIER_URL_TESTNET` for attestation preparation
+- `VERIFIER_URL_TESTNET` for attestation preparation
 - `COSTON2_DA_LAYER_URL` for proof retrieval
 - `X_API_KEY` for DA Layer access
 
@@ -54,21 +55,21 @@ forge script script/customFeeds/PriceVerification.s.sol:InteractWithContract \
 
 ## Available Verification Workflows
 
-| Script | Data Source | Description |
-|--------|-------------|-------------|
-| `PriceVerification.s.sol` | CoinGecko | Historical BTC/USD price verification |
-| `MetalPriceVerification.s.sol` | Swissquote | Gold (XAU) price verification |
-| `InflationDataVerification.s.sol` | World Bank | US CPI inflation data verification |
+| Script                            | Data Source | Description                           |
+| --------------------------------- | ----------- | ------------------------------------- |
+| `PriceVerification.s.sol`         | CoinGecko   | Historical BTC/USD price verification |
+| `MetalPriceVerification.s.sol`    | Swissquote  | Gold (XAU) price verification         |
+| `InflationDataVerification.s.sol` | World Bank  | US CPI inflation data verification    |
 
 ## Read Scripts
 
 After deployment, read feed data:
 
-| Script | Description |
-|--------|-------------|
-| `ReadPriceFeed.s.sol` | Read from PriceVerifierCustomFeed |
+| Script                     | Description                            |
+| -------------------------- | -------------------------------------- |
+| `ReadPriceFeed.s.sol`      | Read from PriceVerifierCustomFeed      |
 | `ReadMetalPriceFeed.s.sol` | Read from MetalPriceVerifierCustomFeed |
-| `ReadInflationFeed.s.sol` | Read from InflationCustomFeed |
+| `ReadInflationFeed.s.sol`  | Read from InflationCustomFeed          |
 
 ```bash
 forge script script/customFeeds/ReadPriceFeed.s.sol:ReadPriceFeed \
@@ -78,6 +79,7 @@ forge script script/customFeeds/ReadPriceFeed.s.sol:ReadPriceFeed \
 ## Data Files
 
 Intermediate data is stored in `data/customFeeds/`:
+
 - `price/` - BTC price verification data
 - `metal/` - Metal price verification data
 - `inflation/` - Inflation data verification data

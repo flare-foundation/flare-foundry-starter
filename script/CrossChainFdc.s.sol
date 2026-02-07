@@ -99,7 +99,7 @@ contract PrepareAndSubmitRequest is Script {
             sourceId,
             requestBody
         );
-        string memory baseUrl = vm.envString("WEB2JSON_VERIFIER_URL_TESTNET");
+        string memory baseUrl = vm.envString("VERIFIER_URL_TESTNET");
         string memory url = string.concat(baseUrl, "/", attestationTypeName, "/prepareRequest");
         (, bytes memory data) = url.post(headers, body);
         FdcBase.AttestationResponse memory response = FdcBase.parseAttestationRequest(data);
