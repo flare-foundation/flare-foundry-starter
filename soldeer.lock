@@ -20,6 +20,18 @@ checksum = "57ada736f383289db77fac4472d48f820e7c98172cf9b01681b0c37065ce043f"
 integrity = "4753ffdfa0dde40878372b6a4d8e8fd1648b190b33996896c8b92f6f1680850f"
 
 [[dependencies]]
+name = "ftso-adapters"
+version = "0.0.1"
+git = "https://github.com/0xreflexivity/ftso-adapters.git"
+rev = "5be6ec053b171cfa4e353e7f59df7803280b0527"
+
+[[dependencies]]
+name = "pyth-sdk-solidity"
+version = "4.3.1"
+git = "https://github.com/0xreflexivity/pyth-sdk-solidity.git"
+rev = "c1a27b51b6cac702983d7e3cd2ae7319ffe6dff7"
+
+[[dependencies]]
 name = "solady"
 version = "0.1.26"
 url = "https://soldeer-revisions.s3.amazonaws.com/solady/0_1_26_25-08-2025_15:30:06_solady.zip"
