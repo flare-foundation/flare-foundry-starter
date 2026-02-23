@@ -13,17 +13,14 @@ It also demonstrates how the official Flare smart contract periphery [package](h
 ### Prerequisites
 
 - [Foundry](https://getfoundry.sh/) installed
-- [Node.js](https://nodejs.org/) (for npm dependencies)
 
 ### Installation
 
-Install all dependencies with a single command:
+Install all dependencies:
 
 ```bash
-make install
+forge soldeer install
 ```
-
-This runs `forge soldeer install` for Solidity dependencies, then fetches npm-only packages (e.g., `ftso-adapters`, `pyth-sdk-solidity`) that aren't available on Soldeer.
 
 ### Configuration
 

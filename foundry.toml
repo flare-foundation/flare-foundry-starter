@@ -14,6 +14,8 @@ forge-std = "1.9.5"
 surl = { version = "0.0.0", git = "https://github.com/memester-xyz/surl.git", rev = "034c912ae9b5e707a5afd21f145b452ad8e800df" }
 flare-periphery = "0.1.37"
 solady = "0.1.26"
+ftso-adapters = { version = "0.0.1", git = "https://github.com/0xreflexivity/ftso-adapters.git", rev = "5be6ec053b171cfa4e353e7f59df7803280b0527" }
+pyth-sdk-solidity = { version = "4.3.1", git = "https://github.com/0xreflexivity/pyth-sdk-solidity.git", rev = "c1a27b51b6cac702983d7e3cd2ae7319ffe6dff7" }
 
 [soldeer]
 # whether soldeer manages remappings
